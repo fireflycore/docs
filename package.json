@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "dev:zh": "npm run -C packages/zh dev",
+    "build:zh": "npm run -C packages/zh build",
+    "dev:en": "npm run -C packages/en dev",
+    "build:en": "npm run -C packages/en build"
+  },
+  "dependencies": {
+    "vitepress": "^1.3.4",
+    "vue": "^3.5.5"
+  }
+}
