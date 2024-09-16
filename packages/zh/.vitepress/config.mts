@@ -31,12 +31,13 @@ const sidebar: DefaultTheme.Sidebar = {
 }
 
 const nav: DefaultTheme.NavItem[] = [
+    { text: '简介', link: '/intro/foreword', activeMatch: '^/intro/foreword' },
     {
         text: '指南',
         link: '/guide/',
         activeMatch: '^/guide|api|about/'
     },
-    { text: '配置', link: '/config/', activeMatch: '^/config/' },
+    { text: 'CLI', link: '/cli/', activeMatch: '^/cli/' },
     {
         text: '链接',
         items: [
