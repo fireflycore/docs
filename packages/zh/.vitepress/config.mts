@@ -44,21 +44,21 @@ const nav: DefaultTheme.NavItem[] = [
             { text: '赞助', link: '/sponsor/', activeMatch: '^/sponsor/' },
             {
                 items: [
-                    { text: 'Vite', link: 'https://cn.vitejs.dev/' },
+                    { text: '梨花炖海棠', link: 'https://lhdht.cn/' },
                     {
-                        text: 'create-electron',
-                        link: 'https://github.com/alex8088/quick-start/tree/master/packages/create-electron'
+                        text: 'go-layout',
+                        link: 'https://github.com/fireflycore/go-layout'
                     }
                 ]
             }
         ]
     },
     {
-        text: 'v2.3.0',
+        text: '更新日志',
         items: [
             {
-                text: '更新日志',
-                link: 'https://github.com/alex8088/electron-vite/blob/master/CHANGELOG.md'
+                text: 'Go-v0.0.8',
+                link: 'https://github.com/fireflycore/go-layout/compare/v0.0.7...v0.0.8'
             }
         ]
     }
