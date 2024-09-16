@@ -18,31 +18,31 @@ hero:
       link: https://github.com/orgs/fireflycore/repositories
 features:
   - icon: ⚡
-    title: Vite 支持
-    details: 继承 Vite 的所有优点，使用方式与 Vite 相同。
-  - icon: 🛠
-    title: 预配置
-    details: 针对 Electron 预先配置，不用担心配置问题。
-  - icon: 💡
-    title: 优化资源处理
-    details: 优化 Electron 主进程的资源处理。
-  - icon: 🚀
-    title: 热替换 HMR
-    details: 渲染器支持模块热替换（HMR）。
-  - icon: 🔥
-    title: 热重载
-    details: 主进程和预加载脚本支持热重载。
-  - icon: 🔌
-    title: 易于调试
-    details: 非常容易在 IDE 中调试，例如 vscode 或 webstorm。
-  - icon: 🏷️
-    title: TypeScript 装饰器
-    details: 支持 TS 装饰器和元数据特性。
-  - icon: 🔒
-    title: 源代码保护
-    details: 编译为 V8 字节码以保护源代码。
-  - icon: 📦
     title: 开箱即用
-    details: 开箱即用支持 Typescript、Vue、React、Svelte 和 SolidJS 等。
+    details: 集成多种开发语言，无需更多的心智负担。
+  - icon: 🛠
+    title: 预置CLI工具
+    details: 快速创建项目，集成环境。
+  - icon: 💡
+    title: 优化通信方式
+    details: 基于GRPC进行通信，并集成buf cli进行proto文件管理。
+  - icon: 🚀
+    title: 高性能微服务网关
+    details: 统一流量进出口，提供GRPC服务和HTTP服务。
+#  - icon: 🔥
+#    title: 全链路日志集成
+#    details: 主进程和预加载脚本支持热重载。
+#  - icon: 🔌
+#    title: 易于调试
+#    details: 非常容易在 IDE 中调试，例如 vscode 或 webstorm。
+#  - icon: 🏷️
+#    title: TypeScript 装饰器
+#    details: 支持 TS 装饰器和元数据特性。
+#  - icon: 🔒
+#    title: 源代码保护
+#    details: 编译为 V8 字节码以保护源代码。
+#  - icon: 📦
+#    title: 开箱即用
+#    details: 开箱即用支持 Typescript、Vue、React、Svelte 和 SolidJS 等。
 ---
 
