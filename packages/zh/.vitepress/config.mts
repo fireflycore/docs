@@ -17,6 +17,10 @@ const sidebar: DefaultTheme.Sidebar = {
                 {text: "快速开始", link: "/guide/"},
                 {text: "目录详解", link: "/guide/dir"},
                 {text: "配置参考", link: "/guide/config"},
+                {text: "Jenkins部署", link: "/guide/jenkins"},
+                {text: "Docker部署", link: "/guide/docker"},
+                {text: "K8S部署", link: "/guide/k8s"},
+                {text: "集成Istio", link: "/guide/istio"},
             ]
         },
         {
