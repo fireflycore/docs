@@ -4,8 +4,13 @@ on:
   release:
     types: [created] # 标识在创建新的 Release 时触发
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
-  build-and-deploy:
+  build-zh:
+    name: "release"
     runs-on: ubuntu-latest
 
     steps:
