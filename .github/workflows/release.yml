@@ -9,11 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          ref: docs # 这一步检查 docs 代码
-
       - name: Setup Node.js and pnpm
         uses: actions/setup-node@v3
         with:
