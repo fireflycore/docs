@@ -20,13 +20,13 @@ jobs:
       - name: Setup Node.js and pnpm
         uses: actions/setup-node@v3
         with:
-          node-version: '20.10.0' # 设置 nodejs 的版本
+          node-version: '18.16.0' # 设置 nodejs 的版本
 
       - name: Check file list
         run: ls -a
 
       - name: Install dependencies
-        run: npm install # 使用 pnpm 安装依赖
+        run: npm install
 
       - name: Build VitePress
         run: npm run build:zh # 这里是打包 vitepress 命令
@@ -35,6 +35,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }} # 这一步很重要，单独看下面的大步骤，主要是用来给该脚本一些仓库权限
-          publish_dir: /packages/zh/.vitepress/dist # 指定该文件夹中的 dist
+          publish_dir: packages/zh/.vitepress/dist # 指定该文件夹中的 dist
           publish_branch: pages # 推送到关联仓库的 gh-pages 分支
           dotfiles: true  # 包括在提交中，即使被 .gitignore 文件忽略
