@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as a}from"./chunks/framework.DiyHpDmR.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"guide/k8s.md","filePath":"guide/k8s.md","lastUpdated":1727140273000}'),s={name:"guide/k8s.md"};function r(o,c,d,n,i,p){return a(),t("div")}const f=e(s,[["render",r]]);export{m as __pageData,f as default};

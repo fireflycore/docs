@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as a}from"./chunks/framework.DiyHpDmR.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"guide/dir.md","filePath":"guide/dir.md","lastUpdated":1727140273000}'),r={name:"guide/dir.md"};function d(i,o,s,c,n,p){return a(),t("div")}const f=e(r,[["render",d]]);export{m as __pageData,f as default};
