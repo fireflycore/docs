@@ -47,6 +47,11 @@
 }
 ```
 
+## 运行项目
+- 执行`make dep`初始化项目依赖
+- 执行`make proto`生成项目依赖的proto文件代码（基于buf cli）
+- 执行`make inject`生成依赖注入（基于wire）
+- 执行`make run`运行项目
 
 ## 注册中心
 > 所有的开发语言默认只支持ETCD为注册中心，如果要用其他的注册中心，按照要求进行封装，可以提交仓库到至PR
@@ -103,11 +108,7 @@ store.Use.Task.Await()
 
 :::
 
-## 运行项目
-- 执行`make dep`初始化项目依赖
-- 执行`make proto`生成项目依赖的proto文件代码（基于buf cli）
-- 执行`make inject`生成依赖注入（基于wire）
-- 执行`make run`运行项目
+
 
 ## 创建buf存储仓库
 > 当然也可以在本地创建一个目录来存放grpc的proto，这里演示一下用buf cli来管理grpc的proto文件。
