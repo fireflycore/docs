@@ -9,22 +9,44 @@
 - `firefly create`
 
 ## 项目配置
-```yaml
-system:
-  app_id: 00000000-00000000-00000000 # 项目id
-logger:
-  console: true # 是否启用日志打印
-  remote: false # 是否启用远程日志存储
-micro:
-  run: 0.0.0.0:1024 # 运行端口，IP最好是0.0.0.0
-  dns: test.lhdht.com:80 # 网关DNS地址，用于服务之间调用，域名需要加端口号
-  endpoint: 101.120.1.125:1024|192.168.1.101:1024 # 服务注册地址，外网|内网
-  namespace: /microservice/firefly # 服务注册命名空间，同一个项目的命名空间尽量一致 
-task:
-  max_cache: 100 # 最大任务池缓存数量
-  max_concurrency: 1 # 最大并发数
-  min_concurrency: 0 # 最小并发数
+```json
+// conf/bootstrap.json
+{
+  "micro": {
+    "mode": true,
+    "app_id": "00000000-0000-0000-0000-00000000000", // 应用id，服务唯一标识
+    "namespace": "/microservice", // 命名空间
+    "max_retry": 5, // 服务心跳最大重试次数
+    "ttl": 5, // 心跳间隔
+
+    "network": "main-network", // 网络唯一标识，用于网关负载时的调用逻辑
+    "outer_net_addr": "113.112.111.110:10000", // 外网访问地址
+    "internal_net_addr": "192.168.1.100:10000" // 内网访问地址
+  },
+  "gateway": {
+    "network": "main-network", // 网关组网唯一标识，用于网关负载时的调用逻辑
+    "outer_net_addr": "113.112.111.110:10001", // 网关外网调用地址
+    "internal_net_addr": "192.168.1.101:10001" // 网关内网调用地址
+  },
+  "server": {
+    "grpc_port": 10000, // grpc 服务端口
+  },
+  "logger": {
+    "console": true, // 是否开启日志打印
+    "remote": false // 是否开启远程日志
+  },
+  "task": {
+    "max_cache": 100, // 任务池最大缓存数量
+    "max_concurrency": 1, // 处理任务最大并发
+    "min_concurrency": 0 // 处理任务最小并发
+  },
+  "data_conf_file": [
+    "https://demo.com/config/etcd.config.json", // etcd 配置文件，默认是远程地址，如果要从本地加载，请修改具体方法
+    "https://demo.com/config/mysql.config.json" // mysql 配置文件，默认时远程地址，如果要从本地架子啊，请修改具体方法
+  ]
+}
 ```
+
 
 ## 注册中心
 > 所有的开发语言默认只支持ETCD为注册中心，如果要用其他的注册中心，按照要求进行封装，可以提交仓库到至PR
@@ -32,7 +54,8 @@ task:
 ::: code-group
 
 ```go [golang]
-// bootstrap/setup.go
+// internal/data/core.go 实例化etcd客户端
+// internal/server/register.go // 实例化注册中心，将服务注册到注册中心
 
 store.Use.Task = task.New(&store.Use.Config.Task)
 
@@ -47,6 +70,7 @@ store.Use.Task.Await()
 // 如果ETCD采用TLS加密通信
 // store.Use.Task.InitCert("etcd", &etcdConfig.Tls)
 // store.Use.Task.Await()
+// 开发中
 ```
 
 ```rust [rust]
