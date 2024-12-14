@@ -22,7 +22,7 @@
 |  ├── data   // 业务数据访问，包含cache，db等封装，实现了biz的repo接口。在这里会把data与dao混装在一起，data偏重业务的含义，它主要做的是将领域对象重新拿出来
 |  |  ├── core.go
 |  |  └── demo.go
-|  ├── plugin // 其他依赖在这里实现，通过wire倒装到具体需要的地方
+|  ├── dep // 其他依赖在这里实现，通过wire倒装到具体需要的地方
 |  |  ├── core.go
 |  |  └── logger.go
 |  ├── server // 服务实例的相关代码
