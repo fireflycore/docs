@@ -48,11 +48,43 @@
 ```
 
 ## 运行项目
+
+::: code-group
+```shell [golang]
 - 执行`go mod tidy`初始化项目依赖
 - 执行`buf generate`生成项目依赖的proto文件代码
 - 执行`wire ./cmd/server`生成依赖注入
 - 执行`go run ./cmd/server/main.go`运行项目
+```
 
+```shell [rust]
+- 开发中
+```
+
+```shell [dart]
+- 开发中
+```
+
+```shell [kotlin]
+- 开发中
+```
+
+```shell [swift]
+- 开发中
+```
+
+```shell [node]
+- 开发中
+```
+
+```shell [php]
+- 开发中
+```
+
+```shell [python]
+- 开发中
+```
+:::
 
 
 ## 创建buf存储仓库
