@@ -20,6 +20,7 @@ const sidebar: DefaultTheme.Sidebar = {
                 {text: "服务注册", link: "/guide/service/register"},
                 {text: "服务发现", link: "/guide/service/discover"},
                 {text: "负载均衡", link: "/guide/service/lb"},
+                {text: "参数校验", link: "/guide/validate"},
                 {text: "Jenkins部署", link: "/guide/jenkins"},
                 {text: "Docker部署", link: "/guide/docker"},
                 {text: "K8S部署", link: "/guide/k8s"},
