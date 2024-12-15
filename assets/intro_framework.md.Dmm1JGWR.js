@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as r}from"./chunks/framework.DiyHpDmR.js";const p=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"intro/framework.md","filePath":"intro/framework.md","lastUpdated":1734233436000}'),a={name:"intro/framework.md"};function o(n,s,c,i,m,d){return r(),t("div")}const _=e(a,[["render",o]]);export{p as __pageData,_ as default};
