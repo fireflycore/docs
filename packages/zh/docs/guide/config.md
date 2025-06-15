@@ -82,18 +82,28 @@ managed:
   disable:
     - file_option: go_package
       module: buf.build/googleapis/googleapis
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
+    - file_option: go_package
+      module: buf.build/grpc-ecosystem/grpc-gateway
   override:
     - file_option: go_package_prefix
-      value: go-layout # 实际的项目名称
+      value: go-layout/dep/protobuf/gen
 plugins:
-  - remote: buf.build/grpc/go # 远程插件配置，对应的也有本地插件配置
+  - remote: buf.build/grpc/go
     out: dep/protobuf/gen
     opt: paths=source_relative
   - remote: buf.build/protocolbuffers/go
     out: dep/protobuf/gen
     opt: paths=source_relative
 inputs:
-  - module: buf.build/firefly/guide:main # buf cli仓库地址; 对应的也有本地存储配置，具体参考buf cli文档
+  - module: buf.build/firefly/demo:main
+    types:
+      - acme.config.v1
+      - acme.logger.access.v1
+      - acme.logger.server.v1
+      - acme.logger.operation.v1
+      - acme.demo.v1
 ```
 
 ```yaml [rust]
@@ -160,16 +170,26 @@ version: v2
 managed:
   enabled: true
 plugins:
-  - remote: buf.build/connectrpc/es
-    out: gen
   - remote: buf.build/bufbuild/es
-    out: gen
+    out: dep/protobuf/gen
   - remote: buf.build/bufbuild/knit-ts
-    out: gen
+    out: dep/protobuf/gen
+  - remote: buf.build/connectrpc/query-es
+    out: dep/protobuf/gen
   - remote: buf.build/community/timostamm-protobuf-ts
     out: dep/protobuf/gen
 inputs:
-  - module: buf.build/firefly/guide:main
+  - module: buf.build/bufbuild/protovalidate
+  - module: buf.build/googleapis/googleapis
+    types:
+      - google.api
+  - module: buf.build/firefly/demo:main
+    types:
+      - acme.config.v1
+      - acme.logger.access.v1
+      - acme.logger.server.v1
+      - acme.logger.operation.v1
+      - acme.demo.v1
 ```
 
 ```yaml [php]
