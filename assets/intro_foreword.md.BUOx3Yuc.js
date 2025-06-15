@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as r}from"./chunks/framework.DiyHpDmR.js";const _=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"intro/foreword.md","filePath":"intro/foreword.md","lastUpdated":1749976160000}'),o={name:"intro/foreword.md"};function a(n,s,d,c,i,f){return r(),t("div")}const m=e(o,[["render",a]]);export{_ as __pageData,m as default};
