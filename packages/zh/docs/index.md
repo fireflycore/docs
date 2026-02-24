@@ -12,23 +12,23 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /guide/
+      link: /intro/foreword
     - theme: alt
       text: 查看源码
-      link: https://github.com/orgs/fireflycore/repositories
+      link: https://github.com/fireflycore/go-layout
 features:
   - icon: ⚡
-    title: 开箱即用
-    details: 集成多种开发语言，无需更多的心智负担。
+    title: 多语言生态
+    details: 支持 Go (Stable), Rust, Node.js, Python 等多种语言，统一治理标准。
   - icon: 🛠
-    title: 预置CLI工具
-    details: 快速创建项目，集成环境。
+    title: 开箱即用
+    details: 内置服务注册发现、配置管理、日志监控等基础设施，专注于业务逻辑。
   - icon: 💡
-    title: 优化通信方式
-    details: 基于GRPC进行通信，并集成buf cli进行proto文件管理。
+    title: 协议驱动
+    details: 基于 Protobuf 定义 API，自动生成多语言代码和校验逻辑，确保协作一致性。
   - icon: 🚀
-    title: 高性能微服务网关
-    details: 统一流量进出口，提供GRPC服务和HTTP服务。
+    title: 极致性能
+    details: 默认集成 gRPC 和高性能组件，提供极低的资源占用和极高的吞吐量。
 #  - icon: 🔥
 #    title: 全链路日志集成
 #    details: 主进程和预加载脚本支持热重载。

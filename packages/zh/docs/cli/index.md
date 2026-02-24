@@ -1,11 +1,30 @@
-# 快速开始
+# Firefly CLI 工具
+
+Firefly 提供了一个命令行工具（CLI），用于快速初始化项目和管理微服务环境。
 
 ## 安装
 
-### 前置准备
-- 下载可执行文件：https://github.com/fireflycore/cli/releases
-- 将可执行文件放到任意目录，并配置全局环境变量；
+### 方式一：下载二进制文件 (推荐)
 
-### 安装向导
-- 执行`firefly version`检查是否安装成功并配置全局环境变量；
-- 执行`firefly env`检查依赖环境；
+1. 前往 [Releases 页面](https://github.com/fireflycore/cli/releases) 下载适合您操作系统的最新版本。
+2. 解压并将二进制文件移动到系统 `PATH` 路径下（例如 `/usr/local/bin`）。
+3. 验证安装：
+   ```bash
+   firefly version
+   ```
+
+### 方式二：源码安装
+
+如果您已安装 Go 环境：
+
+```bash
+go install github.com/fireflycore/cli/cmd/firefly@latest
+```
+
+## 环境检查
+
+安装完成后，可以使用 `env` 命令检查当前环境是否满足 Firefly 开发要求（如 Go, Buf, Wire 等工具是否已安装）：
+
+```bash
+firefly env
+```

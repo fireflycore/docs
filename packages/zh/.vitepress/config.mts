@@ -40,11 +40,11 @@ const sidebar: DefaultTheme.Sidebar = {
     {
       text: "部署运维",
       items: [
-        { text: "Buf-cli", link: "/guide/buf" },
-        { text: "Jenkins部署", link: "/guide/jenkins" },
-        { text: "Docker部署", link: "/guide/docker" },
-        { text: "K8S部署", link: "/guide/k8s" },
-        { text: "集成Istio", link: "/guide/istio" },
+        { text: "Buf-cli", link: "/deploy/buf" },
+        { text: "Jenkins部署", link: "/deploy/jenkins" },
+        { text: "Docker部署", link: "/deploy/docker" },
+        { text: "K8S部署", link: "/deploy/k8s" },
+        { text: "集成Istio", link: "/deploy/istio" },
       ],
     },
     {
