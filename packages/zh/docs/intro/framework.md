@@ -4,28 +4,74 @@ Firefly 提供了一套完整的微服务技术栈，涵盖了从网关到存储
 
 ## 架构全景图
 
+### 模式一：自研网关模式 (Standard Mode)
+
+适用于中小型规模集群，或非 K8s 环境。核心特点是使用 Firefly 自研的网关组件处理所有南北向流量。
+
+**优势**：
+- **极简运维**：除业务服务外，仅需维护一个 **Etcd** 集群。相比传统微服务方案，省去了 Config Server, Eureka, Hystrix Dashboard 等繁杂组件。
+- **资源占用低**：网关与服务均基于高性能语言（Go/Rust）构建，启动快，内存占用少。
+- **快速落地**：开箱即用的鉴权与流控能力，无需深入学习 Service Mesh 即可获得微服务治理能力。
+
 ```mermaid
 graph TD
-    User[用户/客户端] --> Gateway[API 网关]
-    Gateway -->|gRPC/HTTP| ServiceA[服务 A (Go)]
-    Gateway -->|gRPC/HTTP| ServiceB[服务 B (Rust)]
+    User[用户/客户端] --> HTTP_GW[HTTP Gateway]
+    User --> GRPC_GW[gRPC Gateway]
     
-    subgraph Infrastructure [基础设施]
-        Registry[服务注册与发现 (Etcd)]
-        Config[配置中心 (Etcd/Consul)]
-        Observability[可观测性 (OpenTelemetry)]
+    HTTP_GW -->|转发| GRPC_GW
+    
+    subgraph "Service Mesh (Logical)"
+        GRPC_GW -->|gRPC + LB + Auth| ServiceA[服务 A]
+        GRPC_GW -->|gRPC + LB + Auth| ServiceB[服务 B]
     end
     
+    subgraph Infrastructure
+        Registry[Etcd (注册/配置)]
+    end
+    
+    GRPC_GW --> Registry
     ServiceA --> Registry
     ServiceB --> Registry
-    ServiceA --> Config
-    ServiceB --> Config
-    
-    ServiceA --> DB[(MySQL/PostgreSQL)]
-    ServiceA --> Cache[(Redis)]
-    
-    ServiceB --> DB
+    ServiceA --> ServiceB
 ```
+
+- **HTTP Gateway**: 负责将外部 HTTP/RESTful 请求转换为 gRPC 请求，转发给 gRPC Gateway。不包含复杂业务逻辑。
+- **gRPC Gateway**: 核心网关。负责所有服务的**负载均衡**、**权限检查**、**鉴权**（调用 Auth 服务）、**熔断**、**限流**。
+- **Service**: 业务服务本身**不做**负载均衡、鉴权等网关逻辑，专注于业务。
+
+### 模式二：K8s + Istio 模式 (Enterprise Mode)
+
+适用于大规模容器化集群。核心特点是将网关能力下沉到 Sidecar/Ingress，业务服务与自研网关解耦。
+
+```mermaid
+graph TD
+    User[用户/客户端] --> IstioIngress[Istio Ingress Gateway]
+    
+    subgraph "K8s Cluster"
+        IstioIngress -->|mTLS| SidecarA
+        
+        subgraph Pod A
+            SidecarA[Envoy Proxy] --> ServiceA[服务 A]
+        end
+        
+        subgraph Pod B
+            SidecarB[Envoy Proxy] --> ServiceB[服务 B]
+        end
+        
+        SidecarA -->|mTLS| SidecarB
+    end
+    
+    subgraph "Auth Component"
+        AuthAdapter[Auth Middleware]
+    end
+    
+    IstioIngress -.->|ExtAuthz| AuthAdapter
+```
+
+- **去中心化**：不再使用自研的 HTTP/gRPC Gateway 组件。
+- **能力下沉**：负载均衡、熔断、限流由 **Istio/Envoy** 接管。
+- **鉴权适配**：原有的鉴权逻辑（在 gRPC Gateway 中）被抽离为独立的**旁路中间件**（如适配 Istio External Authorization），与 Service Mesh 配合使用。
+- **无缝切换**：由于 Firefly 的 Service 设计天然不包含网关逻辑，因此从“自研网关模式”迁移到“Istio 模式”时，业务代码几乎无需修改。
 
 ## 核心组件
 
