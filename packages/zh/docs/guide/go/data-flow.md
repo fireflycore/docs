@@ -131,6 +131,84 @@ func (uc *demoRepo) GetDemoList(ctx context.Context, um *rpc.UserContextMeta, re
 }
 ```
 
+---
+
+## 场景三：跨业务事务 (Transaction)
+在涉及多个 Repository 操作的复杂业务场景中（如：创建订单同时扣减库存），需要使用事务保证数据一致性。
+
+### 1. 定义事务接口
+在 Biz 层定义事务接口，解耦具体实现。
+**文件**: `internal/biz/repo/transaction.go`
+```go
+type Transaction interface {
+    ExecTx(ctx context.Context, fn func(ctx context.Context) error) error
+}
+```
+
+### 2. 注入事务与 Repo
+**文件**: `internal/biz/order.go` (示例)
+
+```go
+type OrderUseCase struct {
+    tx            repo.Transaction // 注入事务接口
+    orderRepo     repo.OrderRepo
+    inventoryRepo repo.InventoryRepo
+}
+
+func NewOrderUseCase(
+    tx repo.Transaction,
+    orderRepo repo.OrderRepo,
+    inventoryRepo repo.InventoryRepo,
+) *OrderUseCase {
+    return &OrderUseCase{
+        tx:            tx,
+        orderRepo:     orderRepo,
+        inventoryRepo: inventoryRepo,
+    }
+}
+```
+
+### 3. 业务逻辑实现
+使用 `ExecTx` 包裹业务逻辑，确保原子性。
+**文件**: `internal/biz/order.go` (示例)
+
+```go
+func (uc *OrderUseCase) CreateOrder(ctx context.Context, order *entity.Order) error {
+    // 开启事务
+    return uc.tx.ExecTx(ctx, func(txCtx context.Context) error {
+        // 1. 创建订单 (传入 txCtx)
+        if err := uc.orderRepo.Create(txCtx, order); err != nil {
+            return err
+        }
+
+        // 2. 扣减库存 (传入 txCtx)
+        // 注意：这里必须使用传入的 txCtx，它包含了事务会话
+        return uc.inventoryRepo.Deduct(txCtx, order.ProductId, order.Count)
+    })
+}
+```
+
+### 4. Data 层实现 (支持事务)
+Data 层需要识别 Context 中的事务对象。
+**文件**: `internal/data/order.go` (示例)
+
+```go
+// 辅助方法：从 context 获取事务 DB，如果不存在则使用默认 DB
+func (r *orderRepo) withDB(ctx context.Context) *gorm.DB {
+    if tx, ok := ctx.Value(repo.TransactionContextKey).(*gorm.DB); ok {
+        return tx
+    }
+    return r.data.db
+}
+
+func (r *orderRepo) Create(ctx context.Context, order *entity.Order) error {
+    // 使用 withDB(ctx) 获取正确的 DB 会话
+    return r.withDB(ctx).Create(order).Error
+}
+```
+
+---
+
 ## 关键代码设计点
 
 1.  **接口隔离**：Biz 层只依赖 `repo.DemoRepo` 接口（定义在 `internal/biz/repo`），不依赖 `internal/data` 的具体实现。这使得单元测试时可以轻松 Mock Repo。
