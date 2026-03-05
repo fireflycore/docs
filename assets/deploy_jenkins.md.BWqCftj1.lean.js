@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as n}from"./chunks/framework.DiyHpDmR.js";const _=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"deploy/jenkins.md","filePath":"deploy/jenkins.md","lastUpdated":1772423541000}'),a={name:"deploy/jenkins.md"};function s(o,r,c,d,p,i){return n(),t("div")}const m=e(a,[["render",s]]);export{_ as __pageData,m as default};
