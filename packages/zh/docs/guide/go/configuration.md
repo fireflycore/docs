@@ -1,86 +1,96 @@
 # 配置详解
 
-`go-layout` 的配置系统设计灵活，支持从本地文件加载或远程配置服务加载。
+`go-layout` 当前配置主线是：
 
-## 引导配置 (Bootstrap)
+```text
+conf/bootstrap.json
+  -> conf/consul.json
+  -> Consul Client
+  -> go-micro/config.Store
+  -> LoadStoreConfig 加载 MySQL、Redis 等运行期配置
+```
 
-一切始于 `conf/bootstrap.json`。这是服务启动时读取的第一个文件，定义了服务的核心属性和“如何加载其他配置”。
+模板默认只装配启动期读取链路。`go-micro/config` 数据面支持 watch，但业务服务如需运行时热更新，需要自行接入 watcher 和组件重载策略。
 
-### 示例配置
+## 引导配置
+
+`bootstrap.json` 是服务启动时读取的第一份配置，负责描述服务自身身份、监听端口、sidecar-agent、logger 和 telemetry。
 
 ```json
 {
-  // 运行环境: dev, test, prod
-  "env": "prod",
-  // 服务运行端口
-  "port": 10500,
-  // 应用唯一标识 (UUID)
-  "app_id": "00000000-0000-0000-0000-00000000000",
-  // 应用名称
-  "app_name": "go-layout",
-  // 应用密钥 (用于鉴权)
-  "app_secret": "UnkK/F+1+6aFV9Gz4lCX1se05+jpmueX",
-  // 应用版本号
-  "version": "v0.0.1",
-  // 配置加载模式: local (本地文件) 或 remote (远程配置中心)
-  "load_conf_mode": "local",
-  
-  // 微服务注册配置 (ETCD)
-  "micro": {
-    // 命名空间
-    "namespace": "/microservice/firefly",
-    // 网络配置
-    "network": {
-      "sn": "main-network",
-      "internal": "192.168.1.100:10600",
-      "external": "112.112.112.112:10600"
-    },
-    // 内核版本信息
-    "kernel": {
-      "version": "v0.3.1"
-    },
-    // 负载均衡权重
-    "weight": 100,
-    // 最大重试次数
-    "max_retry": 5,
-    // 心跳间隔 (秒)
-    "ttl": 5
+  "app": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "env": "prod",
+    "name": "go-layout",
+    "secret": "replace-me",
+    "version": "v0.0.1"
   },
-  
-  // 网关配置 (如果作为网关使用)
-  "gateway": {
-    "network": {
-      "sn": "main-network",
-      "internal": "192.168.1.100:10600",
-      "external": "112.112.112.112:10600"
-    }
-  },
-  
-  // 日志配置
   "logger": {
-    "console": true,  // 是否输出到控制台
-    "remote": false   // 是否发送到远程日志服务
+    "console": true,
+    "remote": false
+  },
+  "service": {
+    "name": "go-layout",
+    "type": "svc",
+    "namespace": "default",
+    "cluster_domain": "cluster.local",
+    "port": 9090,
+    "weight": 100
+  },
+  "telemetry": {
+    "otlp_endpoint": "",
+    "insecure": true,
+    "traces": true,
+    "metrics": true,
+    "logs": false
+  },
+  "server_port": 10500,
+  "managed_port": 10501,
+  "load_config_mode": "store",
+  "sidecar_agent": {
+    "base_url": "http://127.0.0.1:15010",
+    "grace_period": "20s"
   }
 }
 ```
 
-### 字段说明
+## 字段说明
 
-- **load_conf_mode**: 控制后续配置（如 MySQL, Redis）的加载方式。
-    - `local`: 从本地 `internal/conf/` 目录下的 JSON 文件加载。
-    - `remote`: 通过 `micro` 配置连接配置中心，获取配置内容。
+- `app`：应用身份、环境、密钥、版本和启动时生成的实例 ID。
+- `service`：业务服务名、命名空间、集群域、默认服务端口和权重。
+- `server_port`：当前进程业务 gRPC 监听端口。
+- `managed_port`：当前进程自管理 HTTP 端口。
+- `sidecar_agent`：本机 sidecar-agent 管理地址和优雅摘流宽限期。
+- `logger`：本地 console 和远端 OTel 日志开关。
+- `telemetry`：OTel collector 地址和 traces / metrics / logs 开关。
 
-## 业务配置
+## 运行期组件配置
 
-业务组件的配置（如 MySQL, Redis, Etcd）通常由 `internal/conf` 包中的 Loader 加载。
+运行期组件配置由 `internal/conf` 中的 loader 负责读取，例如：
 
-例如 `internal/conf/mysql.go` 定义了 MySQL 配置的结构和加载逻辑。
+- `internal/conf/mysql.go`
+- `internal/conf/redis.go`
 
-```go
-type MysqlConf struct {
-    Write *MysqlBaseConf `json:"write"`
-    Read  *MysqlBaseConf `json:"read"`
-}
-```
+这些 loader 会根据：
 
-在 `local` 模式下，你需要确保本地存在对应的配置文件（通常不提交到 Git，或者是示例文件）。
+- `bootstrapConfig.App.Id`
+- `bootstrapConfig.App.Env`
+- `bootstrapConfig.App.Secret`
+- 配置分组和名称
+
+从 `go-micro/config.Store` 读取当前生效配置。
+
+## Consul 配置
+
+`conf/consul.json` 用于初始化 Consul client，并进一步构造 `go-micro/config.Store`。
+
+当前模板中，Consul 是裸机 / IDC 阶段的默认运行期配置后端。云原生环境可以在后续演进中替换为 Kubernetes 适配层，但业务代码应继续面向 `go-micro/config` 契约。
+
+## 不再推荐的旧口径
+
+当前官方文档不再推荐：
+
+- 使用 `load_conf_mode=local/remote` 作为模板默认配置主线
+- 通过业务服务直接调用 Config Service 获取 MySQL / Redis 配置
+- 在 `go-micro/config` 根包中定义业务侧 `BootstrapConfig` 接口
+- 把 ETCD 注册配置写入 `bootstrap.json` 作为当前主线

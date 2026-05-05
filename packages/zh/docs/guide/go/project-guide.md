@@ -2,19 +2,18 @@
 
 ## 项目概述
 
-`go-layout` 是 **Firefly 微服务框架** 的官方 Go 语言项目模板。它不仅仅是一个代码骨架，更是一套经过生产环境验证的最佳实践集合。
-
-本模板旨在为开发者提供一个**开箱即用**、**结构清晰**、**易于扩展**的微服务起点。它预置了微服务开发所需的通用基础设施，让开发者能够专注于业务逻辑的实现。
+`go-layout` 是 Firefly 微服务框架的官方 Go 语言项目模板。它提供一套可直接落地的微服务骨架，默认对齐当前 Firefly Go 主线。
 
 ### 核心特性
 
-- **标准分层架构**：基于 DDD（领域驱动设计）思想，清晰划分 `Service` (接口)、`Biz` (业务)、`Data` (数据) 层。
-- **依赖注入**：完全集成 Google `Wire`，实现编译期依赖注入，保证代码的模块化和可测试性。
-- **协议优先**：集成 `Buf` 和 `gRPC`，通过 Proto 定义驱动开发，自动生成接口代码和验证逻辑 (`protovalidate`)。
-- **配置管理**：支持本地文件 (`bootstrap.json`) 和远程配置服务 (Config Service)，统一管理多环境配置。
-- **数据转换**：集成 `Goverter`，自动生成高效的 DTO <-> PO/DO 转换代码，拒绝反射。
-- **统一基础设施**：预置了 `GORM` (MySQL), `Redis`, `Logger` 等常用组件的封装和最佳配置。
-- **示例模块**：内置完整的 `Demo` 模块，展示了从 API 定义到数据库存储的完整链路，作为开发的参考范本。
+- **标准分层架构**：清晰划分 `Service`、`Biz`、`Data` 层。
+- **依赖注入**：集成 Google `Wire`，通过编译期依赖注入管理组件装配。
+- **协议优先**：集成 `Buf`、`gRPC` 和 `protovalidate`。
+- **配置管理**：启动时读取 `bootstrap.json` 与 `consul.json`，再通过 Consul Store 加载运行期配置。
+- **统一运行托管**：通过 `go-consul/agent.Agent` 托管业务 gRPC、management 端口和 sidecar-agent watch/replay 生命周期。
+- **服务上下文**：gRPC 入口注入 `go-micro/service.Context`，业务代码不再解析旧用户 metadata 模型。
+- **远程调用**：通过 `go-micro/invocation` 的 DNS-only 模型发起服务间调用。
+- **数据转换**：集成 `Goverter`，生成 DTO 与 Entity 转换代码。
 
 ## 快速开始
 
@@ -22,79 +21,89 @@
 
 确保本地已安装以下工具：
 
-- **Go** (>= 1.25.1)
-- **Buf** (用于 Proto 管理): `npm install -g @bufbuild/buf` 或参考官方文档
-- **Wire** (用于依赖注入): `go install github.com/google/wire/cmd/wire@latest`
-- **Goverter** (用于数据转换): `go install github.com/jmattheis/goverter/cmd/goverter@latest`
-- **Protoc-Gen-Go** 相关插件 (参考 `buf.gen.yaml`)
+- **Go**：建议使用模板 `go.mod` 中声明的版本。
+- **Buf**：用于 Proto 生成。
+- **Wire**：`go install github.com/google/wire/cmd/wire@latest`
+- **Goverter**：`go install github.com/jmattheis/goverter/cmd/goverter@latest`
 
 ### 2. 初始化项目
 
-假设你要创建一个名为 `account-service` 的新服务：
-
-1. **克隆模板**
-   ```bash
-   git clone https://github.com/fireflycore/go-layout.git account-service
-   cd account-service
-   rm -rf .git  # 移除模板的 git 历史
-   git init     # 初始化新仓库
-   ```
-
-2. **重命名模块**
-   建议使用提供的脚本进行重命名（将 `go-layout` 替换为你的模块名）：
-   
-   **Linux / macOS:**
-   ```bash
-   ./rename_project.sh github.com/your-org/account-service
-   ```
-   
-   **Windows:**
-   ```cmd
-   .\rename_project.bat github.com/your-org/account-service
-   ```
-
-3. **清理示例代码**
-   `Demo` 模块仅供参考。在熟悉架构后，你可以：
-   - 删除 `internal/biz/demo.go`, `internal/biz/model/demo.go`, `internal/biz/repo/demo.go`
-   - 删除 `internal/data/demo.go`, `internal/data/entity/demo.go`
-   - 删除 `internal/service/demo.go`
-   - 删除 `internal/biz/convert/demo.go`
-   - **注意**：删除后需要重新运行 `wire ./cmd/server`（或执行 `make init`）生成依赖注入代码。
-
-### 3. 运行服务
-
 ```bash
-# 最省心的方式（推荐）：一条命令完成生成与运行
-make run
+git clone https://github.com/fireflycore/go-layout.git account-service
+cd account-service
+./rename_project.sh github.com/your-org/account-service
+go mod tidy
 ```
 
-`make run` 会依次执行 `buf generate`、`goverter`、`wire ./cmd/server`、`go mod tidy`，然后运行 `cmd/server/main.go`。
+### 3. 准备配置
 
-如果你需要分步执行，可参考 `makefile` 中的 `init/generate/dto` 目标。
+重点检查：
 
-## 工具链指南
+- `conf/bootstrap.json`：服务身份、端口、sidecar-agent、logger、telemetry。
+- `conf/consul.json`：Consul 连接信息，用于构造 `go-micro/config.Store`。
 
-### Buf (Protobuf 管理)
+`bootstrap.json` 使用当前结构：
 
-本项目不直接包含 `.proto` 文件，而是假设 Proto 定义在独立的仓库中管理（推荐做法）。
-- `buf.gen.yaml`: 定义了如何从 Proto 生成 Go 代码。
-- **生成代码**：通常通过 CI/CD 管道或脚本执行 `buf generate`，生成的代码位于 `dep/protobuf/gen`。
+```json
+{
+  "app": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "env": "prod",
+    "name": "go-layout",
+    "secret": "replace-me",
+    "version": "v0.0.1"
+  },
+  "service": {
+    "name": "go-layout",
+    "type": "svc",
+    "namespace": "default",
+    "cluster_domain": "cluster.local",
+    "port": 9090,
+    "weight": 100
+  },
+  "server_port": 10500,
+  "managed_port": 10501,
+  "sidecar_agent": {
+    "base_url": "http://127.0.0.1:15010",
+    "grace_period": "20s"
+  }
+}
+```
 
-### Wire (依赖注入)
+### 4. 常用命令
 
-- **入口**：`cmd/server/wire.go`
-- **各层 Provider**：每个层级 (`internal/biz`, `internal/data`, `internal/service` 等) 都有一个 `core.go`，定义了该层的 `ProviderSet`。
-- **新增组件**：当你新增一个 Repo 或 Service 时，记得将其构造函数加入到对应层的 `core.go` 中，然后执行 `wire ./cmd/server`（或 `make init`）。
+```bash
+make generate
+make init
+make run
+make build
+```
 
-### Goverter (数据转换)
+当前模板中：
 
-- **定义**：在 `internal/biz/convert` 中定义接口。
-- **生成**：在项目根目录运行 `make dto`（等价于 `goverter gen ./internal/biz/convert`）。生成代码位于 `dep/dto/`，通过 `internal/dto` 适配为 Biz 层依赖的接口。
+- `make generate`：生成 Proto 和 DTO。
+- `make init`：执行生成、`wire ./cmd/server` 和 `go mod tidy`。
+- `make run`：直接运行 `go run ./cmd/server`。
+- `make build`：执行初始化并注入构建信息。
+
+如果修改了 ProviderSet、构造函数签名或依赖关系，必须重新执行 `wire ./cmd/server` 或 `make init`。
+
+### 5. 管理端口
+
+management 端口由 `managed_port` 控制，默认可暴露：
+
+- `GET /health`
+- `GET /ready`
+- `GET /info`
+- `GET /metrics`
+
+`/ready` 和 `/info` 会输出 `go-consul/agent.Status` 摘要，便于排查 sidecar-agent 连接、注册重放和最近错误。
 
 ## 目录导航
 
 - [目录结构详解](directory-structure.md)
 - [核心概念说明](core-concepts.md)
 - [数据流转图解](data-flow.md)
+- [配置详解](configuration.md)
 - [架构分层深度解析](architecture.md)
 - [开发最佳实践](best-practices.md)

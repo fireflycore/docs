@@ -9,7 +9,7 @@ Firefly 提供了一套完整的微服务技术栈，涵盖了从网关到存储
 适用于中小型规模集群，或非 K8s 环境。核心特点是使用 Firefly 自研的网关组件处理所有南北向流量。
 
 **优势**：
-- **极简运维**：除业务服务外，仅需维护一个 **Etcd** 集群。相比传统微服务方案，省去了 Config Server, Eureka, Hystrix Dashboard 等繁杂组件。
+- **渐进运维**：裸机 / IDC 阶段以 `sidecar-agent + Consul` 承接注册、配置和本机接入能力，业务服务不直接承担注册发现逻辑。
 - **资源占用低**：网关与服务均基于高性能语言（Go/Rust）构建，启动快，内存占用少。
 - **快速落地**：开箱即用的鉴权与流控能力，无需深入学习 Service Mesh 即可获得微服务治理能力。
 
@@ -20,24 +20,31 @@ graph TD
     
     HTTP_GW -->|转发| GRPC_GW
     
-    subgraph "Service Mesh (Logical)"
-        GRPC_GW -->|gRPC + LB + Auth| ServiceA[服务 A]
-        GRPC_GW -->|gRPC + LB + Auth| ServiceB[服务 B]
+    subgraph "Node Runtime"
+        Agent[sidecar-agent]
+        Envoy[Envoy]
+    end
+
+    subgraph "Services"
+        GRPC_GW -->|gRPC| Envoy
+        Envoy --> ServiceA[服务 A]
+        Envoy --> ServiceB[服务 B]
     end
     
     subgraph Infrastructure
-        Registry[Etcd (注册/配置)]
+        Registry[Consul (注册事实/运行期配置)]
     end
     
-    GRPC_GW --> Registry
-    ServiceA --> Registry
-    ServiceB --> Registry
-    ServiceA --> ServiceB
+    Agent --> Registry
+    ServiceA --> Agent
+    ServiceB --> Agent
+    ServiceA -->|Service DNS| Envoy
 ```
 
 - **HTTP Gateway**: 负责将外部 HTTP/RESTful 请求转换为 gRPC 请求，转发给 gRPC Gateway。不包含复杂业务逻辑。
 - **gRPC Gateway**: 核心网关。负责所有服务的**负载均衡**、**权限检查**、**鉴权**（调用 Auth 服务）、**熔断**、**限流**。
-- **Service**: 业务服务本身**不做**负载均衡、鉴权等网关逻辑，专注于业务。
+- **sidecar-agent**: 本机控制面，负责 register / drain / deregister、watch/replay 和本机接入状态。
+- **Service**: 业务服务本身不做注册中心 SDK、实例发现和负载均衡，专注于业务。
 
 ### 模式二：K8s + Istio 模式 (Enterprise Mode)
 
@@ -80,13 +87,13 @@ graph TD
 -   **外部接口**：支持通过 gRPC-Gateway 或自定义 HTTP Server 暴露 RESTful API。
 
 ### 2. 服务治理
--   **注册与发现**：默认集成 **Etcd**。服务启动时自动注册节点信息，调用方通过客户端负载均衡器获取健康节点。
--   **负载均衡**：客户端侧负载均衡（Client-side LB），支持轮询、加权轮询等策略。
+-   **注册与发现**：裸机 / IDC 阶段由 `sidecar-agent + Consul` 承接，云原生阶段由 `K8s Service / EndpointSlice / CoreDNS` 承接。
+-   **负载均衡**：业务代码只表达目标 Service DNS，负载均衡和治理由运行时数据面承接。
 -   **熔断与限流**：集成常用的熔断器和限流器，保护服务免受雪崩效应影响。
 
 ### 3. 配置管理
--   **引导配置**：本地 `bootstrap.json` 定义服务的基础属性（环境、端口、配置中心地址）。
--   **动态配置**：支持从配置中心（如 Etcd）动态加载业务配置，无需重启服务即可调整参数。
+-   **引导配置**：本地 `bootstrap.json` 定义服务身份、业务端口、管理端口、sidecar-agent、logger 和 telemetry。
+-   **运行期配置**：业务服务通过 `go-micro/config.Store` 读取当前生效配置；裸机 / IDC 默认由 Consul 适配层实现。
 
 ### 4. 数据存储
 -   **ORM**：Go 版本默认集成 **GORM**，支持 MySQL, PostgreSQL, SQLite 等主流数据库。

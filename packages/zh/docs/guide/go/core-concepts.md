@@ -47,7 +47,7 @@
   ```go
   type DemoRepo interface {
       CreateDemo(ctx context.Context, row *entity.Demo) error
-      GetDemoList(...) *pb.DemoList
+      GetDemoList(...) *pb.GetDemoListResponse
       // ...
   }
   ```

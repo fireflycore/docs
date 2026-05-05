@@ -33,7 +33,13 @@
 ### 2.2 日志记录
 
 - **错误日志**：通常在 Service 层捕获到错误并准备返回给客户端时记录。避免在 Data、Biz、Service 层重复记录同一个错误。
-- **上下文**：日志中应包含 TraceID（模板已自动集成），方便链路追踪。
+- **上下文**：gRPC 入口会注入 `go-micro/service.Context`，访问日志和 SQL 日志可读取用户、租户、服务实例和 TraceID。
+
+### 2.3 服务上下文
+
+- **推荐**：Service 层通过 `service.FromContext(ctx)` 读取 `go-micro/service.Context`。
+- **禁止**：在 Biz/Data 层重复解析 gRPC metadata。
+- **禁止**：继续使用旧 `UserContextMeta` 作为服务内主上下文。
 
 ## 3. 数据库与事务
 
@@ -62,8 +68,9 @@ func (uc *DemoUseCase) CreateOrder(ctx context.Context, order *Order) error {
 
 ## 4. 配置管理
 
-- **环境隔离**：不同环境（Dev, Test, Prod）的配置应通过配置中心或不同的 `bootstrap.json` 管理。
+- **环境隔离**：不同环境（Dev, Test, Prod）通过 `bootstrap.json.app.env` 与运行期配置 Store 隔离。
 - **敏感信息**：数据库密码、API Key 等敏感信息禁止直接硬编码在代码中，应通过环境变量或加密配置加载。
+- **配置边界**：`bootstrap.json` 只放服务启动必需配置；MySQL、Redis 等运行期组件配置通过 `go-micro/config.Store` 读取。
 
 ## 5. 代码风格
 
