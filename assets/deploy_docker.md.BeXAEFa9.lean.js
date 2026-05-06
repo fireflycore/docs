@@ -1,0 +1,1 @@
+import{_ as e,c as t,o}from"./chunks/framework.DiyHpDmR.js";const i=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"deploy/docker.md","filePath":"deploy/docker.md","lastUpdated":1777954618000}'),a={name:"deploy/docker.md"};function r(c,d,s,n,p,l){return o(),t("div")}const m=e(a,[["render",r]]);export{i as __pageData,m as default};

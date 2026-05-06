@@ -1,0 +1,1 @@
+import{_ as t,c as e,o}from"./chunks/framework.DiyHpDmR.js";const _=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"deploy/istio.md","filePath":"deploy/istio.md","lastUpdated":1777954618000}'),a={name:"deploy/istio.md"};function s(i,r,c,d,n,p){return o(),e("div")}const m=t(a,[["render",s]]);export{_ as __pageData,m as default};
