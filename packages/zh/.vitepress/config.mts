@@ -86,8 +86,8 @@ const nav: DefaultTheme.NavItem[] = [
     text: "更新日志",
     items: [
       {
-        text: "Go-v0.1.9",
-        link: "https://github.com/fireflycore/go-layout/compare/v0.1.8...v0.1.9",
+        text: "Go-v0.3.2",
+        link: "https://github.com/fireflycore/go-layout/compare/v0.3.1...v0.3.2",
       },
     ],
   },
