@@ -1,114 +1,123 @@
 # 技术架构
 
-Firefly 提供了一套完整的微服务技术栈，涵盖了从网关到存储的各个环节。
+Firefly 的当前主线围绕 Go 业务服务模板、协议生成、裸机运行时和云原生目标态组织。业务服务保持轻量分层，注册、发现、路由、鉴权和流量治理逐步交给运行时组件承接。
 
 ## 架构全景图
 
-### 模式一：自研网关模式 (Standard Mode)
+### 模式一：裸机运行时模式
 
-适用于中小型规模集群，或非 K8s 环境。核心特点是使用 Firefly 自研的网关组件处理所有南北向流量。
-
-**优势**：
-- **渐进运维**：裸机 / IDC 阶段以 `sidecar-agent + Consul` 承接注册、配置和本机接入能力，业务服务不直接承担注册发现逻辑。
-- **资源占用低**：网关与服务均基于高性能语言（Go/Rust）构建，启动快，内存占用少。
-- **快速落地**：开箱即用的鉴权与流控能力，无需深入学习 Service Mesh 即可获得微服务治理能力。
+适用于中小型规模集群、IDC 或暂未进入 K8s 的环境。核心特点是业务服务通过 `go-consul/agent` 接入本机 `sidecar-agent`，由 Envoy、Consul、api-gateway 和 authz 承接治理能力。
 
 ```mermaid
 graph TD
-    User[用户/客户端] --> HTTP_GW[HTTP Gateway]
-    User --> GRPC_GW[gRPC Gateway]
-    
-    HTTP_GW -->|转发| GRPC_GW
-    
+    User[用户/客户端] --> EntryEnvoy[入口 Envoy]
+    EntryEnvoy --> ApiGateway[api-gateway xDS 控制面]
+    EntryEnvoy --> Authz[authz ext_authz]
+    EntryEnvoy --> NodeEnvoy[节点 Envoy]
+
     subgraph "Node Runtime"
         Agent[sidecar-agent]
-        Envoy[Envoy]
+        NodeEnvoy
     end
 
-    subgraph "Services"
-        GRPC_GW -->|gRPC| Envoy
-        Envoy --> ServiceA[服务 A]
-        Envoy --> ServiceB[服务 B]
+    subgraph "Business Services"
+        ServiceA[服务 A]
+        ServiceB[服务 B]
     end
-    
-    subgraph Infrastructure
-        Registry[Consul (注册事实/运行期配置)]
+
+    subgraph "Shared Facts"
+        Consul[Consul service 与 route document]
     end
-    
-    Agent --> Registry
+
     ServiceA --> Agent
     ServiceB --> Agent
-    ServiceA -->|Service DNS| Envoy
+    Agent --> Consul
+    ApiGateway --> Consul
+    Agent --> NodeEnvoy
+    NodeEnvoy --> ServiceA
+    NodeEnvoy --> ServiceB
+    ServiceA -->|Service DNS| NodeEnvoy
 ```
 
-- **HTTP Gateway**: 负责将外部 HTTP/RESTful 请求转换为 gRPC 请求，转发给 gRPC Gateway。不包含复杂业务逻辑。
-- **gRPC Gateway**: 核心网关。负责所有服务的**负载均衡**、**权限检查**、**鉴权**（调用 Auth 服务）、**熔断**、**限流**。
-- **sidecar-agent**: 本机控制面，负责 register / drain / deregister、watch/replay 和本机接入状态。
-- **Service**: 业务服务本身不做注册中心 SDK、实例发现和负载均衡，专注于业务。
+关键职责：
 
-### 模式二：K8s + Istio 模式 (Enterprise Mode)
+- `go-layout`：业务服务模板，负责 Service / Biz / Data 分层、启动配置、gRPC 入口和 management 端口。
+- `go-consul/agent`：业务进程内接入库，读取 `gateway.manifest.json` 并对接本机 `sidecar-agent`。
+- `sidecar-agent`：本机控制面，负责注册、摘流、注销、watch/replay、route document、东西向 xDS、DNS 和健康探测。
+- `api-gateway`：north-south 入口控制面，消费 Consul route document、endpoint 和 `descriptor_ref`，生成入口 Envoy xDS。
+- `authz`：标准 Envoy ext_authz 数据面授权服务，执行身份校验和 Casbin 判定。
+- `Envoy`：承载入口路由、转码、鉴权、东西向路由和负载能力。
 
-适用于大规模容器化集群。核心特点是将网关能力下沉到 Sidecar/Ingress，业务服务与自研网关解耦。
+### 模式二：K8s + Istio 模式
+
+适用于大规模容器化集群。目标是让服务注册、发现、负载和治理由 Kubernetes 与 Istio / Envoy 承接，业务代码继续保持同一套 Service / Biz / Data 分层和 `go-micro/service.Context`。
 
 ```mermaid
 graph TD
-    User[用户/客户端] --> IstioIngress[Istio Ingress Gateway]
-    
+    User[用户/客户端] --> IstioIngress[Istio IngressGateway]
+    IstioIngress -->|ext_authz| Authz[authz]
+
     subgraph "K8s Cluster"
-        IstioIngress -->|mTLS| SidecarA
-        
-        subgraph Pod A
-            SidecarA[Envoy Proxy] --> ServiceA[服务 A]
-        end
-        
-        subgraph Pod B
-            SidecarB[Envoy Proxy] --> ServiceB[服务 B]
-        end
-        
-        SidecarA -->|mTLS| SidecarB
+        IstioIngress --> SidecarA[Envoy Sidecar A]
+        SidecarA --> ServiceA[服务 A]
+        SidecarA --> SidecarB[Envoy Sidecar B]
+        SidecarB --> ServiceB[服务 B]
+        K8sService[Kubernetes Service / EndpointSlice]
+        CoreDNS[CoreDNS]
     end
-    
-    subgraph "Auth Component"
-        AuthAdapter[Auth Middleware]
-    end
-    
-    IstioIngress -.->|ExtAuthz| AuthAdapter
+
+    ServiceA --> K8sService
+    ServiceB --> K8sService
+    CoreDNS --> K8sService
 ```
 
-- **去中心化**：不再使用自研的 HTTP/gRPC Gateway 组件。
-- **能力下沉**：负载均衡、熔断、限流由 **Istio/Envoy** 接管。
-- **鉴权适配**：原有的鉴权逻辑（在 gRPC Gateway 中）被抽离为独立的**旁路中间件**（如适配 Istio External Authorization），与 Service Mesh 配合使用。
-- **无缝切换**：由于 Firefly 的 Service 设计天然不包含网关逻辑，因此从“自研网关模式”迁移到“Istio 模式”时，业务代码几乎无需修改。
+迁移原则：
+
+- 业务服务不恢复注册中心 SDK、实例发现或负载均衡逻辑。
+- 鉴权继续使用 Envoy ext_authz 与 Firefly authority 头。
+- 配置数据面按环境选择实现：裸机用 `go-consul/config`，K8s 用 `go-k8s/config`。
+- manifest 与 descriptor 继续作为接口事实、转码和治理输入。
 
 ## 核心组件
 
 ### 1. 通信协议
--   **内部通信**：默认使用 **gRPC**。它基于 HTTP/2，性能高效，支持双向流，且有完善的 IDL (Protobuf) 支持。
--   **外部接口**：支持通过 gRPC-Gateway 或自定义 HTTP Server 暴露 RESTful API。
+
+- **内部通信**：默认使用 gRPC。
+- **外部入口**：裸机场景由 `api-gateway + Envoy` 承接 HTTP/JSON 到 gRPC 转码；云原生场景可映射到 Istio IngressGateway 和 Envoy 能力。
+- **接口契约**：以 Protobuf 为单一事实来源，Buf 负责代码生成，`protoc-gen-gateway-manifest` 负责生成 `gateway.manifest.json`。
 
 ### 2. 服务治理
--   **注册与发现**：裸机 / IDC 阶段由 `sidecar-agent + Consul` 承接，云原生阶段由 `K8s Service / EndpointSlice / CoreDNS` 承接。
--   **负载均衡**：业务代码只表达目标 Service DNS，负载均衡和治理由运行时数据面承接。
--   **熔断与限流**：集成常用的熔断器和限流器，保护服务免受雪崩效应影响。
+
+- **服务注册**：裸机由 `go-consul/agent -> sidecar-agent -> Consul` 承接；云原生由 Kubernetes Service / EndpointSlice 承接。
+- **服务发现**：业务代码只表达目标 Service DNS，不直接做实例发现。
+- **路由与负载**：由 Envoy / Istio 等运行时数据面承接。
+- **鉴权**：由 authz 数据面执行，业务服务可在显式配置后本地验签 `x-firefly-authz-sign`。
 
 ### 3. 配置管理
--   **引导配置**：本地 `bootstrap.json` 定义服务身份、业务端口、管理端口、sidecar-agent、logger 和 telemetry。
--   **运行期配置**：业务服务通过 `go-micro/config.Store` 读取当前生效配置；裸机 / IDC 默认由 Consul 适配层实现。
 
-### 4. 数据存储
--   **ORM**：Go 版本默认集成 **GORM**，支持 MySQL, PostgreSQL, SQLite 等主流数据库。
--   **Cache**：默认集成 **go-redis**，提供高性能的缓存支持。
--   **数据转换**：集成 **Goverter**，在编译期生成 DTO 与 Entity 之间的高性能转换代码。
+- **引导配置**：本地 `bootstrap.json` 定义服务身份、业务端口、management 端口、sidecar-agent、logger 和 telemetry。
+- **运行期配置**：业务服务通过 `go-micro/config.Store` 读取当前生效配置；裸机 / IDC 默认由 Consul 适配层实现。
+- **控制面边界**：Config 服务负责发布、版本、回滚、审计和治理，不作为业务服务高频配置读取代理。
+
+### 4. 可观测性
+
+- Trace 主线使用 OTel / W3C Trace Context。
+- 默认传播 `traceparent`、`tracestate` 和 `baggage`。
+- `x-request-id` 只作为 Envoy 或日志关联 ID，不作为业务 trace 主链路。
 
 ### 5. 开发工具链
--   **Buf**：现代化的 Protobuf 管理工具，用于 lint、格式化和生成代码。
--   **Wire**：Go 语言的编译期依赖注入工具。
--   **Protovalidate**：基于 Protobuf 选项的参数校验框架，自动生成校验逻辑。
+
+- **Buf**：Protobuf 管理、lint、breaking check 和代码生成。
+- **protoc-gen-gateway-manifest**：从 proto descriptor 生成 Firefly route manifest。
+- **Wire**：Go 编译期依赖注入。
+- **Goverter**：编译期生成 DTO / Entity 转换代码。
+- **Protovalidate**：基于 Protobuf 选项的参数校验。
 
 ## 多语言支持策略
 
-Firefly 的核心架构是语言无关的。只要遵循相同的协议标准，不同语言实现的服务可以无缝协作。
+Firefly 的核心架构是语言无关的。只要遵循相同的协议标准，不同语言实现的服务可以通过 gRPC、Firefly authority 和运行时治理能力协作。
 
--   **Go**: `go-layout` (Stable) - 官方推荐的生产级实现。
--   **Rust**: (Planning) - 面向对性能和内存安全有极致要求的场景。
--   **Node.js / Python**: (Planning) - 面向快速开发和脚本胶水层。
+| 语言 | 状态 | 说明 |
+| :--- | :--- | :--- |
+| Go | Stable | `go-layout` 是当前官方推荐的生产级模板。 |
+| Rust / Node.js / Python 等 | Planning | 后续围绕相同协议和运行时契约推进。 |

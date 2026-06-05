@@ -46,7 +46,6 @@ conf/bootstrap.json
   },
   "server_port": 10500,
   "managed_port": 10501,
-  "load_config_mode": "store",
   "sidecar_agent": {
     "base_url": "http://127.0.0.1:15010",
     "grace_period": "20s"

@@ -1,9 +1,6 @@
-# buf-cli配置
-> buf cli管理proto，可采用远程插件/本地插件来生成grpc代码;
->
-> 具体服务则通过`buf.gen.yaml`来控制所需生成的proto文件;
-> 
-> 所有的proto文件都应在一个仓库进行管理;
+# Buf 与代码生成
+
+Buf 用于管理 Protobuf、生成 gRPC 代码，并在 Go 主线中配合 `protoc-gen-gateway-manifest` 生成 Firefly 网关 manifest。业务服务的服务能力以 `dep/protobuf/gen/gateway.manifest.json` 为准。
 
 [buf cli docs](https://buf.build/docs/introduction)
 
@@ -25,9 +22,9 @@ breaking:
     - EXTENSION_NO_DELETE
     - FIELD_SAME_DEFAULT
 ```
-`buf login` 登陆之后，使用`buf push`将代码存到buf仓库中
+`buf login` 登录之后，可使用 `buf push` 将 proto 推送到 Buf module。
 
-## buf.gen.yaml 
+## Go 服务 buf.gen.yaml
 
 ::: code-group
 
@@ -52,13 +49,18 @@ plugins:
   - remote: buf.build/protocolbuffers/go
     out: dep/protobuf/gen
     opt: paths=source_relative
+  - local: protoc-gen-gateway-manifest
+    out: dep/protobuf/gen
+    # gateway manifest 是单文件聚合产物，必须让 Buf 一次性把所有待生成 proto 传给插件。
+    strategy: all
+    opt:
+      - descriptor_ref=https://minio.local.com/default/descriptor/go-layout/v0.0.1.pb
+      - include_package_prefix=acme.demo.
 inputs:
   - module: buf.build/firefly/demo:main
     types:
+      - acme.auth.token.v1
       - acme.config.v1
-      - acme.logger.access.v1
-      - acme.logger.server.v1
-      - acme.logger.operation.v1
       - acme.demo.v1
 ```
 
@@ -176,4 +178,11 @@ inputs:
 
 :::
 
-执行`buf generate`生成服务端/客户端代码
+执行 `buf generate` 会生成服务端 / 客户端代码和 `gateway.manifest.json`。
+
+## Manifest 生成规则
+
+- `protoc-gen-gateway-manifest` 必须配置 `strategy: all`，否则 Buf 按目录多次调用插件时会生成重复的 `gateway.manifest.json`。
+- `include_package_prefix` 只应覆盖当前业务服务拥有的 proto 包；依赖服务 proto 可以生成 client，但不能注册成当前服务能力。
+- `descriptor_ref` 是 descriptor set 的加载地址或版本引用。存在 HTTP/JSON -> gRPC 转码 route 时，api-gateway 需要通过它加载 descriptor set。
+- 没有 `google.api.http` 标注的方法会进入 `services[].methods`，但不会进入 `routes[]`，也不会自动合成 HTTP path。

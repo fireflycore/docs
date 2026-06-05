@@ -89,7 +89,7 @@ cmd/server/main.go
 
 关键文件：
 
-- `internal/server/register.go`：基于 `agent.ServiceOptions + grpc.ServiceDesc` 构造 `agent.Agent`。
+- `internal/server/register.go`：基于 `agent.ServiceOptions` 构造 `agent.Agent`；服务能力由 `dep/protobuf/gen/gateway.manifest.json` 读取。
 - `internal/server/server.go`：注入业务本地 `Serve/Shutdown`，并关闭 connection manager 与 telemetry。
 - `internal/server/grpc.go`：业务 gRPC server、OTel、access log、recovery、ServiceContext、gRPC health。
 - `internal/server/managed.go`：management HTTP 端口，暴露 `/health`、`/ready`、`/info`、`/metrics`。

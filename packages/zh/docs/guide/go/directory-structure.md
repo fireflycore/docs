@@ -70,7 +70,7 @@ Service 层不再手工解析 gRPC metadata。
 
 - `grpc.go`：业务 gRPC server，挂接 OTel、recovery、access log、ServiceContext 和 gRPC health。
 - `managed.go`：management HTTP server，暴露 `/health`、`/ready`、`/info`、`/metrics`。
-- `register.go`：基于 `agent.ServiceOptions + grpc.ServiceDesc` 创建 `go-consul/agent.Agent`。
+- `register.go`：基于 `agent.ServiceOptions` 创建 `go-consul/agent.Agent`；服务能力来自 `dep/protobuf/gen/gateway.manifest.json`。
 - `server.go`：创建 `AppServer`，通过 `Agent.ConfigureRun` 注入本地 `Serve/Shutdown`。
 - `build_info.go`：构建信息。
 - `core.go`：Wire ProviderSet。

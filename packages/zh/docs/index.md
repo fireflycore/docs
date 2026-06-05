@@ -1,34 +1,37 @@
 ---
 layout: home
 title: Firefly
-titleTemplate: 一个高性能、低占用的微服务框架
+titleTemplate: 多语言微服务治理与 Go 服务模板
 hero:
   name: Firefly
-  text: 一个高性能、低占用的微服务框架
-  tagline: 简单、高效、低占用的另一种开发模式
+  text: 多语言微服务治理与 Go 服务模板
+  tagline: 从协议、服务模板、sidecar-agent 到 API Gateway 的渐进式微服务体系
   image:
     src: /logo.svg
     alt: logo
   actions:
     - theme: brand
       text: 快速开始
-      link: /intro/foreword
+      link: /guide/go/project-guide
     - theme: alt
-      text: 查看源码
+      text: 当前主线
+      link: /intro/mainline
+    - theme: alt
+      text: 源码组织
       link: https://github.com/fireflycore/go-layout
 features:
   - icon: ⚡
-    title: 多语言生态
-    details: 支持 Go (Stable), Rust, Node.js, Python 等多种语言，统一治理标准。
+    title: Go 主线稳定
+    details: go-layout v0.3.5 对齐 go-micro v1.6.3 与 go-consul v0.3.3，提供可直接落地的服务骨架。
   - icon: 🛠
-    title: 开箱即用
-    details: 内置服务注册发现、配置管理、日志监控等基础设施，专注于业务逻辑。
+    title: 运行时接管治理
+    details: 裸机阶段由 sidecar-agent、Envoy 和 Consul 承接注册、路由、发现与授权接入，业务服务只表达自身能力和目标服务。
   - icon: 💡
     title: 协议驱动
-    details: 基于 Protobuf 定义 API，自动生成多语言代码和校验逻辑，确保协作一致性。
+    details: 基于 Protobuf、Buf 和 gateway manifest 管理服务能力，HTTP/JSON 转 gRPC 依赖 descriptor_ref。
   - icon: 🚀
-    title: 极致性能
-    details: 默认集成 gRPC 和高性能组件，提供极低的资源占用和极高的吞吐量。
+    title: 鉴权与上下文收敛
+    details: 统一使用 Firefly authority 头、authz ext_authz 和 go-micro service.Context，避免业务层重复解析身份。
 #  - icon: 🔥
 #    title: 全链路日志集成
 #    details: 主进程和预加载脚本支持热重载。
@@ -45,4 +48,3 @@ features:
 #    title: 开箱即用
 #    details: 开箱即用支持 Typescript、Vue、React、Svelte 和 SolidJS 等。
 ---
-

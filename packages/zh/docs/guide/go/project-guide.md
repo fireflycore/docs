@@ -61,6 +61,17 @@ go mod tidy
     "port": 9090,
     "weight": 100
   },
+  "logger": {
+    "console": true,
+    "remote": false
+  },
+  "telemetry": {
+    "otlp_endpoint": "",
+    "insecure": true,
+    "traces": true,
+    "metrics": true,
+    "logs": false
+  },
   "server_port": 10500,
   "managed_port": 10501,
   "sidecar_agent": {

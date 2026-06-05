@@ -6,6 +6,7 @@ const sidebar: DefaultTheme.Sidebar = {
       text: "简介",
       items: [
         { text: "使用前言", link: "/intro/foreword" },
+        { text: "当前主线", link: "/intro/mainline" },
         { text: "设计理念", link: "/intro/design" },
         { text: "技术架构", link: "/intro/framework" },
         { text: "支持语言", link: "/intro/lang" },
@@ -40,11 +41,13 @@ const sidebar: DefaultTheme.Sidebar = {
     {
       text: "部署运维",
       items: [
-        { text: "Buf-cli", link: "/deploy/buf" },
-        { text: "Jenkins部署", link: "/deploy/jenkins" },
-        { text: "Docker部署", link: "/deploy/docker" },
-        { text: "K8S部署", link: "/deploy/k8s" },
-        { text: "集成Istio", link: "/deploy/istio" },
+        { text: "Buf 与代码生成", link: "/deploy/buf" },
+        { text: "Docker 与本地联调", link: "/deploy/docker" },
+        { text: "sidecar-agent", link: "/deploy/sidecar-agent" },
+        { text: "API Gateway", link: "/deploy/api-gateway" },
+        { text: "K8s 部署", link: "/deploy/k8s" },
+        { text: "Istio 集成", link: "/deploy/istio" },
+        { text: "Jenkins 流水线", link: "/deploy/jenkins" },
       ],
     },
     {
@@ -60,6 +63,7 @@ const sidebar: DefaultTheme.Sidebar = {
 
 const nav: DefaultTheme.NavItem[] = [
   { text: "简介", link: "/intro/foreword", activeMatch: "^/intro/foreword" },
+  { text: "当前主线", link: "/intro/mainline", activeMatch: "^/intro/mainline" },
   {
     text: "指南",
     link: "/guide/",
@@ -86,8 +90,12 @@ const nav: DefaultTheme.NavItem[] = [
     text: "更新日志",
     items: [
       {
-        text: "Go-v0.3.2",
-        link: "https://github.com/fireflycore/go-layout/compare/v0.3.1...v0.3.2",
+        text: "go-layout",
+        link: "https://github.com/fireflycore/go-layout",
+      },
+      {
+        text: "go-micro",
+        link: "https://github.com/fireflycore/go-micro",
       },
     ],
   },
