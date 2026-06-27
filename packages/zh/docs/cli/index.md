@@ -1,6 +1,6 @@
 # Firefly CLI 工具
 
-Firefly CLI 是 Firefly 工程侧开发辅助工具，当前版本为 `v0.1.3`。它负责创建 Go 服务项目、维护 `.firefly/project.yaml`，并在 proto 项目中生成、上传和发布 api-gateway descriptor current。
+Firefly CLI 是 Firefly 工程侧开发辅助工具，当前版本为 `v0.1.4`。它负责创建 Go 服务项目、维护 `.firefly/project.yaml`，并在 proto 项目中生成、上传和发布 api-gateway descriptor current。
 
 CLI 不接管 sidecar、gateway、authz、token、config、observability 或运行时联调。业务服务项目只表达服务身份、生成 gateway manifest 和发布 route facts；HTTP/JSON 转 gRPC 所需 descriptor 由对应 namespace 的 proto 项目发布。
 
@@ -15,7 +15,7 @@ firefly --version
 源码安装：
 
 ```bash
-go install github.com/fireflycore/cli/cmd/firefly@v0.1.3
+go install github.com/fireflycore/cli/cmd/firefly@v0.1.4
 ```
 
 ## 当前命令

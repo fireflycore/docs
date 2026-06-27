@@ -1,6 +1,6 @@
 # 常用命令
 
-本文按当前 `v0.1.3` 代码说明 Firefly CLI 命令。
+本文按当前 `v0.1.4` 代码说明 Firefly CLI 命令。
 
 ## `firefly create`
 
@@ -266,5 +266,5 @@ firefly --version
 当前输出：
 
 ```text
-firefly version v0.1.3
+firefly version v0.1.4
 ```
