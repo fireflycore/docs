@@ -28,7 +28,7 @@ features:
     details: 裸机阶段由 sidecar-agent、Envoy 和 Consul 承接注册、路由、发现与授权接入，业务服务只表达自身能力和目标服务。
   - icon: 💡
     title: 协议驱动
-    details: 基于 Protobuf、Buf 和 gateway manifest 管理服务能力，HTTP/JSON 转 gRPC 依赖 descriptor_ref。
+    details: 基于 Protobuf、Buf 和 gateway manifest 管理服务能力，HTTP/JSON 转 gRPC 依赖 namespace descriptor current。
   - icon: 🚀
     title: 鉴权与上下文收敛
     details: 统一使用 Firefly authority 头、authz ext_authz 和 go-micro service.Context，避免业务层重复解析身份。
