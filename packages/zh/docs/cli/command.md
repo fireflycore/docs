@@ -144,12 +144,10 @@ firefly project check
 检查范围：
 
 - `.firefly/project.yaml`
-- `go.mod`
-- `Makefile` / `makefile`
-- `buf.yaml`
-- `buf.gen.yaml`
-- `gateway.manifest.json` 常见生成位置
-- `conf/bootstrap.json` 中的服务版本
+- service 项目的 `go.mod`、`Makefile` / `makefile`
+- service 项目的 `buf.gen.yaml` 和 `gateway.manifest.json` 常见生成位置
+- service 项目的 `conf/bootstrap.json` 中的服务版本
+- proto 项目的 `buf.yaml`
 - proto 项目的本地 descriptor 输出路径、S3 endpoint、bucket 和可见凭证来源
 
 它不会连接 sidecar、gateway、authz、token 服务、配置中心或观测系统。
