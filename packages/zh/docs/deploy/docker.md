@@ -74,16 +74,34 @@ go run ./cmd/server -config conf/bootstrap.json
 默认管理面：
 
 ```text
-127.0.0.1:18080
+127.0.0.1:18610
 ```
 
 默认 xDS gRPC：
 
 ```text
-127.0.0.1:18081
+127.0.0.1:18611
+```
+
+默认入口 Envoy listener：
+
+```text
+0.0.0.0:18504
 ```
 
 `api-gateway` 不托管 Envoy、Consul 或它们的静态启动配置，只通过 xDS、Envoy admin API 和 Consul HTTP API 协作。
+
+如果要验证 HTTP/JSON -> gRPC 转码，先由对应 namespace 的 proto 项目发布 descriptor current：
+
+```bash
+firefly descriptor publish
+```
+
+默认 Consul KV：
+
+```text
+{namespace}/api-gateway/descriptor/current
+```
 
 ## 排障入口
 
@@ -91,4 +109,4 @@ go run ./cmd/server -config conf/bootstrap.json
 - `api-gateway`：`/debug/runtime`、`/debug/consul`、`/debug/xds`、`/debug/envoy`。
 - `go-layout`：management 端口 `/health`、`/ready`、`/info`、`/metrics`。
 
-如果入口路由没有出现，优先检查业务服务是否生成并上报了 `gateway.manifest.json`，以及 Consul 健康实例 meta 中是否存在 `route_config_ref`。
+如果入口路由没有出现，优先检查业务服务是否生成并上报了 `gateway.manifest.json`、sidecar-agent 是否写入 `{namespace}/routes/{service_app_id}/current`，以及 proto 项目是否发布 `{namespace}/api-gateway/descriptor/current`。

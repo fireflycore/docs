@@ -38,7 +38,7 @@ go-consul v0.3.3
 - `go-micro`：公共上下文、中间件、invocation、配置契约、telemetry、service authority 管理等基础库。
 - `go-consul/agent`：裸机业务服务与本机 `sidecar-agent` 的桥接层，读取 manifest 并执行 register / drain / deregister / watch。
 - `sidecar-agent`：裸机本机控制面，写 Consul service 与 route document，维护本机 Envoy xDS、DNS、健康探测和恢复视图。
-- `api-gateway`：north-south 入口网关控制面，消费 Consul route document、endpoint 与 descriptor_ref，生成入口 Envoy xDS。
+- `api-gateway`：north-south 入口网关控制面，消费 Consul route document、健康 endpoint 与 namespace descriptor current，生成入口 Envoy xDS。
 - `authz`：Envoy ext_authz 数据面授权服务，校验 Firefly authority，执行 Casbin 判定，签发短 TTL `x-firefly-authz-sign`。
 
 ## 身份入口

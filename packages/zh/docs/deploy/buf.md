@@ -54,7 +54,6 @@ plugins:
     # gateway manifest 是单文件聚合产物，必须让 Buf 一次性把所有待生成 proto 传给插件。
     strategy: all
     opt:
-      - descriptor_ref=https://minio.local.com/default/descriptor/go-layout/v0.0.1.pb
       - include_package_prefix=acme.demo.
 inputs:
   - module: buf.build/firefly/demo:main
@@ -184,5 +183,28 @@ inputs:
 
 - `protoc-gen-gateway-manifest` 必须配置 `strategy: all`，否则 Buf 按目录多次调用插件时会生成重复的 `gateway.manifest.json`。
 - `include_package_prefix` 只应覆盖当前业务服务拥有的 proto 包；依赖服务 proto 可以生成 client，但不能注册成当前服务能力。
-- `descriptor_ref` 是 descriptor set 的加载地址或版本引用。存在 HTTP/JSON -> gRPC 转码 route 时，api-gateway 需要通过它加载 descriptor set。
+- 业务服务 manifest 不维护 api-gateway 转码 descriptor 发布主线；HTTP/JSON -> gRPC 所需 descriptor 由对应 namespace 的 proto 项目发布。
 - 没有 `google.api.http` 标注的方法会进入 `services[].methods`，但不会进入 `routes[]`，也不会自动合成 HTTP path。
+
+## Proto 项目 Descriptor
+
+proto 仓库需要初始化为 Firefly proto 项目：
+
+```yaml
+project:
+  type: proto
+```
+
+发布 namespace canonical descriptor：
+
+```bash
+firefly descriptor publish
+```
+
+默认写入的 Consul KV：
+
+```text
+{namespace}/api-gateway/descriptor/current
+```
+
+api-gateway 会按 namespace 拉取 descriptor current 并绑定到对应转码 route，不会把不同 proto 仓库生成的 descriptor 合并成一份全局 pb。

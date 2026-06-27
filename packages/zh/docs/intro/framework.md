@@ -44,7 +44,7 @@ graph TD
 - `go-layout`：业务服务模板，负责 Service / Biz / Data 分层、启动配置、gRPC 入口和 management 端口。
 - `go-consul/agent`：业务进程内接入库，读取 `gateway.manifest.json` 并对接本机 `sidecar-agent`。
 - `sidecar-agent`：本机控制面，负责注册、摘流、注销、watch/replay、route document、东西向 xDS、DNS 和健康探测。
-- `api-gateway`：north-south 入口控制面，消费 Consul route document、endpoint 和 `descriptor_ref`，生成入口 Envoy xDS。
+- `api-gateway`：north-south 入口控制面，消费 Consul route document、健康 endpoint 和 namespace descriptor current，生成入口 Envoy xDS。
 - `authz`：标准 Envoy ext_authz 数据面授权服务，执行身份校验和 Casbin 判定。
 - `Envoy`：承载入口路由、转码、鉴权、东西向路由和负载能力。
 

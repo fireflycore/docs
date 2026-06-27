@@ -68,7 +68,7 @@ pipeline {
 ## 部署前检查
 
 - `dep/protobuf/gen/gateway.manifest.json` 已生成并随构建产物发布。
-- `descriptor_ref` 指向可访问、版本化的 descriptor set。
+- 对应 namespace 的 proto 项目已发布 descriptor current，例如 `{namespace}/api-gateway/descriptor/current`。
 - `conf/bootstrap.json` 中的 `app.id`、`service.name`、`service.namespace` 和端口符合目标环境。
 - 裸机场景中，目标节点已部署 `sidecar-agent` 和 Envoy。
 - 如果启用本地 authz 验签，`authz_verification` 必须能加载正确的 Ed25519 公钥。
