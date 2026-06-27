@@ -91,7 +91,7 @@ firefly project init \
 | `--s3-force-path-style` | `false` | proto-only，使用 path-style 地址。 |
 | `--overwrite` | `false` | 覆盖已有 `.firefly/project.yaml`。 |
 
-业务服务项目不写入 `descriptor` 或 `s3` 配置块；descriptor/S3 参数只对 `--type proto` 的 proto 仓库有意义。proto 项目类型直接写 `--type proto`，不要写成 `proto_repo`。
+业务服务项目不写入 `descriptor` 或 `s3` 配置块；descriptor/S3 参数只对 `--type proto` 的 proto 仓库有意义。proto 项目类型直接写 `--type proto`，不要写成 `proto_repo`。proto 项目不定义 `service` 或 `bootstrap` 配置块，descriptor 路径模板不使用 `${service}` 或 `${app_id}`。
 
 ## `firefly project info`
 

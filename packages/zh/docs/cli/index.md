@@ -101,6 +101,8 @@ firefly project init \
 
 `project.type` 只支持 `service` 和 `proto`。proto 项目类型直接写 `proto`，不要写成 `proto_repo`；`proto_repo` 只作为 descriptor current JSON 中的来源元数据字段。
 
+proto 项目不定义 `service` 或 `bootstrap` 配置块；descriptor 路径模板按 namespace/repo/version 推导，不使用 `${service}` 或 `${app_id}`。
+
 业务服务项目不写入 `descriptor` 或 `s3` 配置块；descriptor/S3 参数只对 `project.type: proto` 的 proto 仓库生效。
 
 查看解析结果：

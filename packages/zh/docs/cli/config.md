@@ -60,6 +60,8 @@ s3:
 
 `project.type` 只支持 `service` 和 `proto`。proto 项目类型直接写 `proto`，不要写成 `proto_repo`。
 
+proto 项目不定义 `service` 或 `bootstrap` 配置块；descriptor 路径模板按 namespace/repo/version 推导，不使用 `${service}` 或 `${app_id}`。
+
 ## 解析规则
 
 业务服务项目默认版本字段是 `conf/bootstrap.json` 中的 `app.version`。proto 项目默认使用 `proto.version`。
