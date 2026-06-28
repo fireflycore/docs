@@ -55,6 +55,17 @@ docker compose up -d
 
 CoreDNS 每台业务宿主机独立运行，负责把 `*.svc.cluster.local` 解析到本机 mesh VIP；DNS 不负责透明代理，后续导流由本机 nftables 或等价运行时完成。
 
+服务间透明调用的目标形态是：
+
+```text
+Service DNS:9090
+  -> CoreDNS 返回本机 mesh VIP 127.255.0.1
+  -> nftables 将 127.255.0.1:9090 导入 127.0.0.1:18502
+  -> sidecar-agent-envoy 根据 authority/path 路由
+```
+
+`sidecar-agent-envoy` 的 Docker Compose 只发布 `18502/18503`。不要把 `9090` 作为 Docker 端口映射发布到 Envoy；`9090` 是服务逻辑端口，应由业务进程访问 `Service DNS:9090` 后经本机 nftables 透明导入 `18502`。
+
 ## sidecar-agent 源码进程
 
 基础设施启动后，再启动 `sidecar-agent` 源码进程：
