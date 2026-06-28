@@ -1,11 +1,11 @@
 # Docker 与本地联调
 
-Firefly 当前没有单一“大一统 compose”。本地联调通常按组件仓库分别启动：先启动 `sidecar-agent` 的运行时底座，再启动 Go 业务服务；如果要验证 north-south 入口，再加入 `api-gateway` 和入口 Envoy。
+Firefly 当前没有单一“大一统 compose”。本地联调通常先启动 `/firefly/deploy/docker` 中的标准基础设施，再启动 `sidecar-agent`、业务服务和 `api-gateway` 等源码进程。
 
 ## 推荐顺序
 
 ```text
-Consul / Envoy / OTel
+Consul / CoreDNS / Envoy / OTel
   -> sidecar-agent
   -> authz
   -> go-layout 业务服务
@@ -15,33 +15,61 @@ Consul / Envoy / OTel
 最小开发路径可以先只跑：
 
 ```text
-sidecar-agent 标准版
+Consul + CoreDNS + sidecar-agent-envoy
+  -> sidecar-agent
   -> go-layout
 ```
 
-## sidecar-agent compose
+## Docker 基础设施
 
-`sidecar-agent` 仓库提供三种 compose 模式：
+`firefly/deploy` 仓库提供标准 Docker 基础设施：
 
 ```bash
-cd /Users/lhdht/product/firefly/sidecar-agent
+cd firefly/deploy/docker/consul
+docker compose up -d
 
-# 最小版：只启动 sidecar-agent，外部提供 Consul / Envoy / OTel
-docker compose up --build -d
+cd ../core-dns
+docker compose up -d
 
-# 标准版：sidecar-agent + Consul + Envoy
-docker compose -f docker-compose.standard.yml up --build -d
+cd ../sidecar-agent-envoy
+docker compose up -d
 
-# 完整版：标准版 + OTel Collector + Prometheus
-docker compose -f docker-compose.full.yml up --build -d
+cd ../api-gateway-envoy
+docker compose up -d
 ```
 
-标准版适合本地开发和小团队联调。启动后至少检查：
+常用基础设施端口：
+
+| 端口 | 组件 | 用途 |
+| :--- | :--- | :--- |
+| `18500` | Consul | HTTP API / UI |
+| `127.0.0.1:53` | CoreDNS | 节点级 Service DNS |
+| `18502` | sidecar-agent-envoy | 服务到服务数据面入口 |
+| `18503` | sidecar-agent-envoy | Envoy admin |
+| `18504` | api-gateway-envoy | north-south HTTP/gRPC 入口 |
+| `18505` | api-gateway-envoy | Envoy admin |
+| `18506` | east-west-envoy | 预留跨集群入口 |
+| `18507` | east-west-envoy | Envoy admin |
+| `18508` | CoreDNS | health |
+| `18509` | CoreDNS | ready |
+
+CoreDNS 每台业务宿主机独立运行，负责把 `*.svc.cluster.local` 解析到本机 mesh VIP；DNS 不负责透明代理，后续导流由本机 nftables 或等价运行时完成。
+
+## sidecar-agent 源码进程
+
+基础设施启动后，再启动 `sidecar-agent` 源码进程：
 
 ```bash
-curl -s http://127.0.0.1:18510/healthz
-curl -s http://127.0.0.1:18510/readyz
-curl -s http://127.0.0.1:18510/debug/runtime
+cd firefly/golang/sidecar-agent
+go run ./cmd/server -config conf/bootstrap.json
+```
+
+启动后至少检查：
+
+```bash
+curl -s http://127.0.0.1:18600/healthz
+curl -s http://127.0.0.1:18600/readyz
+curl -s http://127.0.0.1:18600/debug/runtime
 ```
 
 ## 运行业务服务
@@ -55,7 +83,7 @@ curl -s http://127.0.0.1:18510/debug/runtime
 然后运行：
 
 ```bash
-cd /Users/lhdht/product/firefly/go-layout
+cd firefly/golang/go-layout
 make init
 make run
 ```
@@ -67,7 +95,7 @@ make run
 入口网关控制面由 `api-gateway` 仓库运行：
 
 ```bash
-cd /Users/lhdht/product/firefly/api-gateway
+cd firefly/golang/api-gateway
 go run ./cmd/server -config conf/bootstrap.json
 ```
 
@@ -89,7 +117,7 @@ go run ./cmd/server -config conf/bootstrap.json
 0.0.0.0:18504
 ```
 
-`api-gateway` 不托管 Envoy、Consul 或它们的静态启动配置，只通过 xDS、Envoy admin API 和 Consul HTTP API 协作。
+`api-gateway` 不托管 Envoy、Consul、CoreDNS 或它们的静态启动配置，只通过 xDS、Envoy admin API、Consul HTTP API 和本地 descriptor cache 协作。
 
 如果要验证 HTTP/JSON -> gRPC 转码，先由对应 namespace 的 proto 项目发布 descriptor current：
 

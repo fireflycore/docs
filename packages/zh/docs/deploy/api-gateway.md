@@ -7,7 +7,7 @@
 ## 运行入口
 
 ```bash
-cd /Users/lhdht/product/firefly/api-gateway
+cd firefly/golang/api-gateway
 go run ./cmd/server -config conf/bootstrap.json
 ```
 
