@@ -8,9 +8,11 @@ Go 业务服务模板当前主线是：
 
 ```text
 go-layout v0.3.5
-go-micro v1.6.3
-go-consul v0.3.3
+go-micro v1.6.4
+go-consul v0.3.6
 ```
+
+控制面组件 `sidecar-agent` 与 `api-gateway` 当前直接依赖 `go-micro v1.6.4`。它们分别通过本机 admin API、Envoy xDS 和 Consul HTTP API 承接控制面事实，不直接引入 `go-consul`。
 
 `api-gateway`、`authz` 等独立组件可能处于不同依赖版本，阅读文档时不要把 Go 业务服务模板的版本号直接套到所有仓库。官方指南会在组件页说明各自职责和运行入口。
 

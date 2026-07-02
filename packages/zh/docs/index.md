@@ -22,7 +22,7 @@ hero:
 features:
   - icon: ⚡
     title: Go 主线稳定
-    details: go-layout v0.3.5 对齐 go-micro v1.6.3 与 go-consul v0.3.3，提供可直接落地的服务骨架。
+    details: go-layout v0.3.5 对齐 go-micro v1.6.4 与 go-consul v0.3.6，提供可直接落地的服务骨架。
   - icon: 🛠
     title: 运行时接管治理
     details: 裸机阶段由 sidecar-agent、Envoy 和 Consul 承接注册、路由、发现与授权接入，业务服务只表达自身能力和目标服务。

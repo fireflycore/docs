@@ -1,6 +1,6 @@
 # 快速开始
 
-Firefly 当前推荐从 Go 业务服务模板开始。`go-layout` 已经接入当前主线：`go-micro v1.6.3`、`go-consul v0.3.3`、manifest-first 注册、`sidecar-agent` 托管和 `go-micro/service.Context`。
+Firefly 当前推荐从 Go 业务服务模板开始。`go-layout` 已经接入当前主线：`go-micro v1.6.4`、`go-consul v0.3.6`、manifest-first 注册、`sidecar-agent` 托管和 `go-micro/service.Context`。
 
 ## 1. 准备工具
 

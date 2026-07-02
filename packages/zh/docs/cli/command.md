@@ -113,8 +113,8 @@ language: go
 module: github.com/fireflycore/app
 version: v0.0.1
 dependencies:
-  go-consul: v0.3.3
-  go-micro: v1.6.3
+  go-consul: v0.3.6
+  go-micro: v1.6.4
 ```
 
 proto 项目示例输出：
