@@ -2,6 +2,8 @@
 
 `sidecar-agent` 是裸机 / IDC 场景下的本机控制面代理。它连接同机业务服务、本机 Envoy、共享 Consul 和可观测组件，负责 register / drain / deregister、watch/replay、xDS、健康探测和恢复视图。
 
+它通过 Envoy admin `/ready` 观察外部 Envoy 状态；默认探测间隔为 `2s`，只影响 readiness 摘要，不参与每次业务请求转发。
+
 它不是配置中心、不是 north-south 全局网关，也不是完整 service mesh 平台。
 
 ## 部署模式

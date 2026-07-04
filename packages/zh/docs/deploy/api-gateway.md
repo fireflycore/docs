@@ -106,6 +106,8 @@ story-studio/api-gateway/descriptor/current
 
 `api-gateway` 会按 namespace 拉取 descriptor current JSON，下载并校验对应 pb。不同 proto 仓库生成的 descriptor 不会被合并成一份全局 pb，转码 route 通过 route-level typed per-filter config 绑定自己的 namespace descriptor。
 
+descriptor 不只需要能解析成 `google.protobuf.FileDescriptorSet`，还必须包含 route document 中转码 route 声明的 `grpc_service`。如果 descriptor 缺少目标 proto service，`api-gateway` 会拒绝发布新 xDS 并在 `/debug/xds.snapshot_error` 暴露错误，避免把必然被 Envoy RDS NACK 的配置下发给 `api-gateway-envoy`。
+
 ## Route Document
 
 入口路由来自 Consul 中按 namespace 隔离的 route document：
@@ -118,7 +120,7 @@ story-studio/api-gateway/descriptor/current
 
 - `protocol=grpc`：`exact_paths[]` 表示 gRPC 入口事实。
 - `http_routes[]`：表示 HTTP/JSON -> gRPC 转码入口，`full_method` 必须属于 `exact_paths[]`。
-- 转码 route 使用该 route 所属 namespace 的 descriptor current，不再要求业务服务携带 descriptor 引用。
+- 转码 route 使用该 route 所属 namespace 的 descriptor current，不再要求业务服务携带 descriptor 引用；descriptor current 必须覆盖该 route 的 proto service。
 - `protocol=http`：表示原生 HTTP proxy，不携带 `exact_paths[]` 或 `full_method`。
 
 `api-gateway` 会把 route document 的 `app_id` 写入 Envoy ext_authz `context_extensions.app_id`，authz 内部再映射为 `target_app_id`。
@@ -143,13 +145,13 @@ curl -X POST http://127.0.0.1:18610/debug/reload
 
 1. 先看 `/debug/runtime` 和 `/readyz`。
 2. 再看 `/debug/namespaces`、`/debug/consul`、`/debug/xds`、`/debug/envoy`。
-3. 最后检查 route document、descriptor current、Consul 服务名和 authz 服务连接。
+3. 最后检查 route document、descriptor current、Consul 服务名和 authz 服务连接；若 `/debug/xds.snapshot_error` 提示 service 不在 descriptor 中，先重新发布 namespace descriptor current。
 
 ## 上线前检查
 
 - Envoy、Consul 已由基础设施层启动，api-gateway 能访问 Envoy admin 与 Consul HTTP API。
 - `namespaces[]` 已声明目标 namespace、route prefix 和 descriptor current key。
-- 对应 namespace 的 proto 项目已发布 descriptor current。
+- 对应 namespace 的 proto 项目已发布 descriptor current，且 `/debug/descriptors` 中的 `grpc_services` 覆盖所有转码 route。
 - 业务服务已生成并上报 `gateway.manifest.json`，sidecar-agent 已写入 route document。
 - authz / Casbin 策略已区分 HTTP 绑定和 gRPC 绑定。
 - Trace 传播使用 `traceparent`、`tracestate` 和 `baggage`。
