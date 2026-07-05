@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+  <title id="title">Firefly 裸机流量拓扑图</title>
+  <desc id="desc">展示 api-gateway、api-gateway-envoy、sidecar-agent、sidecar-agent-envoy、CoreDNS、nftables、Consul 和业务服务之间的数据面与控制面关系。</desc>
+  <defs>
+    <marker id="arrow-data" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1f6feb" />
+    </marker>
+    <marker id="arrow-control" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#b45309" />
+    </marker>
+    <marker id="arrow-observe" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#15803d" />
+    </marker>
+    <style>
+      .canvas { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .shared { fill: #f1f5f9; stroke: #94a3b8; stroke-width: 2; rx: 8; }
+      .data-node { fill: #eff6ff; stroke: #1f6feb; stroke-width: 2; rx: 8; }
+      .control-node { fill: #fff7ed; stroke: #b45309; stroke-width: 2; rx: 8; }
+      .infra-node { fill: #f0fdf4; stroke: #15803d; stroke-width: 2; rx: 8; }
+      .neutral-node { fill: #f8fafc; stroke: #64748b; stroke-width: 2; rx: 8; }
+      .panel-title { font: 700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .node-title { font: 700 18px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .node-line { font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #334155; }
+      .label { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .legend { font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #334155; }
+      .data { fill: none; stroke: #1f6feb; stroke-width: 3; marker-end: url(#arrow-data); }
+      .control { fill: none; stroke: #b45309; stroke-width: 3; stroke-dasharray: 9 7; marker-end: url(#arrow-control); }
+      .observe { fill: none; stroke: #15803d; stroke-width: 3; stroke-dasharray: 4 7; marker-end: url(#arrow-observe); }
+    </style>
+  </defs>
+
+  <rect class="canvas" width="1600" height="980" />
+
+  <rect class="shared" x="440" y="34" width="870" height="112" />
+  <text class="panel-title" x="462" y="66">共享事实与观测</text>
+  <rect class="neutral-node" x="462" y="82" width="230" height="48" />
+  <text x="577" y="102" text-anchor="middle" class="node-title">Consul</text>
+  <text x="577" y="122" text-anchor="middle" class="node-line">18500 HTTP / 18501 gRPC</text>
+  <rect class="neutral-node" x="722" y="82" width="250" height="48" />
+  <text x="847" y="102" text-anchor="middle" class="node-title">Descriptor 存储</text>
+  <text x="847" y="122" text-anchor="middle" class="node-line">namespace canonical pb</text>
+  <rect class="infra-node" x="1002" y="82" width="280" height="48" />
+  <text x="1142" y="102" text-anchor="middle" class="node-title">Observability</text>
+  <text x="1142" y="122" text-anchor="middle" class="node-line">logs / metrics / traces</text>
+
+  <rect class="neutral-node" x="42" y="268" width="180" height="88" />
+  <text x="132" y="300" text-anchor="middle" class="node-title">外部客户端</text>
+  <text x="132" y="324" text-anchor="middle" class="node-line">HTTP/JSON</text>
+  <text x="132" y="344" text-anchor="middle" class="node-line">或外部 gRPC</text>
+
+  <rect class="panel" x="258" y="190" width="318" height="360" />
+  <text class="panel-title" x="280" y="226">入口节点</text>
+  <rect class="data-node" x="292" y="262" width="250" height="92" />
+  <text x="417" y="292" text-anchor="middle" class="node-title">api-gateway-envoy</text>
+  <text x="417" y="318" text-anchor="middle" class="node-line">north-south 数据面</text>
+  <text x="417" y="338" text-anchor="middle" class="node-line">18504 / admin 18505</text>
+  <rect class="control-node" x="292" y="426" width="250" height="86" />
+  <text x="417" y="456" text-anchor="middle" class="node-title">api-gateway</text>
+  <text x="417" y="482" text-anchor="middle" class="node-line">admin 18610</text>
+  <text x="417" y="502" text-anchor="middle" class="node-line">xDS 18611</text>
+
+  <rect class="panel" x="620" y="190" width="444" height="680" />
+  <text class="panel-title" x="642" y="226">业务宿主机 A</text>
+  <rect class="data-node" x="654" y="254" width="176" height="78" />
+  <text x="742" y="284" text-anchor="middle" class="node-title">业务服务 A</text>
+  <text x="742" y="310" text-anchor="middle" class="node-line">真实端口 105xx</text>
+  <rect class="neutral-node" x="654" y="380" width="176" height="78" />
+  <text x="742" y="410" text-anchor="middle" class="node-title">system resolver</text>
+  <text x="742" y="436" text-anchor="middle" class="node-line">split DNS</text>
+  <rect class="infra-node" x="858" y="380" width="176" height="78" />
+  <text x="946" y="408" text-anchor="middle" class="node-title">CoreDNS</text>
+  <text x="946" y="432" text-anchor="middle" class="node-line">127.0.0.1:53</text>
+  <text x="946" y="452" text-anchor="middle" class="node-line">18508 / 18509 / 18510</text>
+  <rect class="infra-node" x="858" y="506" width="176" height="78" />
+  <text x="946" y="536" text-anchor="middle" class="node-title">mesh VIP</text>
+  <text x="946" y="562" text-anchor="middle" class="node-line">127.255.0.1</text>
+  <rect class="infra-node" x="654" y="506" width="176" height="78" />
+  <text x="742" y="536" text-anchor="middle" class="node-title">nftables</text>
+  <text x="742" y="562" text-anchor="middle" class="node-line">9090 -> 18502</text>
+  <rect class="data-node" x="654" y="652" width="176" height="88" />
+  <text x="742" y="682" text-anchor="middle" class="node-title">sidecar-agent-envoy</text>
+  <text x="742" y="708" text-anchor="middle" class="node-line">服务间数据面</text>
+  <text x="742" y="728" text-anchor="middle" class="node-line">18502 / admin 18503</text>
+  <rect class="control-node" x="858" y="652" width="176" height="88" />
+  <text x="946" y="682" text-anchor="middle" class="node-title">sidecar-agent</text>
+  <text x="946" y="708" text-anchor="middle" class="node-line">admin 18600</text>
+  <text x="946" y="728" text-anchor="middle" class="node-line">xDS 18601</text>
+
+  <rect class="panel" x="1102" y="190" width="456" height="680" />
+  <text class="panel-title" x="1124" y="226">业务宿主机 B</text>
+  <rect class="data-node" x="1138" y="254" width="178" height="78" />
+  <text x="1227" y="284" text-anchor="middle" class="node-title">业务服务 B</text>
+  <text x="1227" y="310" text-anchor="middle" class="node-line">真实端口 105yy</text>
+  <rect class="data-node" x="1344" y="254" width="178" height="78" />
+  <text x="1433" y="284" text-anchor="middle" class="node-title">authz</text>
+  <text x="1433" y="310" text-anchor="middle" class="node-line">普通业务服务</text>
+  <rect class="data-node" x="1138" y="652" width="178" height="88" />
+  <text x="1227" y="682" text-anchor="middle" class="node-title">sidecar-agent-envoy</text>
+  <text x="1227" y="708" text-anchor="middle" class="node-line">服务间数据面</text>
+  <text x="1227" y="728" text-anchor="middle" class="node-line">18502 / admin 18503</text>
+  <rect class="control-node" x="1344" y="652" width="178" height="88" />
+  <text x="1433" y="682" text-anchor="middle" class="node-title">sidecar-agent</text>
+  <text x="1433" y="708" text-anchor="middle" class="node-line">admin 18600</text>
+  <text x="1433" y="728" text-anchor="middle" class="node-line">xDS 18601</text>
+
+  <path class="data" d="M222 312 L292 312" />
+  <text class="label" x="250" y="296" text-anchor="middle">入口</text>
+  <path class="data" d="M542 298 C590 298, 600 294, 654 294" />
+  <text class="label" x="590" y="278" text-anchor="middle">route / transcode</text>
+  <path class="data" d="M542 316 C760 316, 930 294, 1138 294" />
+  <path class="data" d="M542 336 C815 356, 1090 330, 1344 300" />
+  <text class="label" x="978" y="336" text-anchor="middle">ext_authz</text>
+
+  <path class="data" d="M742 332 L742 380" />
+  <path class="data" d="M830 419 L858 419" />
+  <path class="data" d="M946 458 L946 506" />
+  <path class="data" d="M858 545 L830 545" />
+  <path class="data" d="M742 584 L742 652" />
+  <path class="data" d="M830 696 C932 696, 1020 306, 1138 306" />
+  <path class="data" d="M830 708 C1015 740, 1240 326, 1344 314" />
+  <text class="label" x="1016" y="650" text-anchor="middle">EDS endpoint / ext_authz</text>
+
+  <path class="control" d="M742 254 C742 202, 946 202, 946 652" />
+  <text class="label" x="830" y="206" text-anchor="middle">register / watch</text>
+  <path class="control" d="M946 652 L946 584 L830 584 L830 696" />
+  <text class="label" x="894" y="624" text-anchor="middle">xDS</text>
+  <path class="control" d="M946 652 C916 420, 720 150, 600 130" />
+
+  <path class="control" d="M1227 332 C1227 514, 1433 520, 1433 652" />
+  <path class="control" d="M1433 332 L1433 652" />
+  <path class="control" d="M1433 652 L1433 740 L1316 740 L1316 696" />
+  <path class="control" d="M1433 652 C1412 430, 850 144, 640 130" />
+
+  <path class="control" d="M417 426 C432 310, 520 150, 577 130" />
+  <path class="control" d="M542 470 C640 360, 730 180, 847 130" />
+  <path class="control" d="M417 426 L417 354" />
+  <text class="label" x="450" y="390" text-anchor="middle">xDS</text>
+
+  <path class="observe" d="M417 262 C560 110, 930 88, 1002 106" />
+  <path class="observe" d="M742 652 C840 230, 980 140, 1085 130" />
+  <path class="observe" d="M1227 652 C1230 450, 1210 210, 1165 130" />
+  <text class="label" x="1186" y="164" text-anchor="middle">观测输出</text>
+
+  <rect x="48" y="900" width="18" height="4" fill="#1f6feb" />
+  <text class="legend" x="76" y="908">实线：请求数据面</text>
+  <line x1="230" y1="902" x2="270" y2="902" stroke="#b45309" stroke-width="3" stroke-dasharray="9 7" />
+  <text class="legend" x="280" y="908">虚线：注册、watch、descriptor、xDS 控制面</text>
+  <line x1="620" y1="902" x2="660" y2="902" stroke="#15803d" stroke-width="3" stroke-dasharray="4 7" />
+  <text class="legend" x="670" y="908">点线：logs / metrics / traces</text>
+</svg>
