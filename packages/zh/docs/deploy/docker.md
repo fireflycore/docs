@@ -2,6 +2,8 @@
 
 Firefly 当前没有单一“大一统 compose”。本地联调通常先启动 `/firefly/deploy/docker` 中的标准基础设施，再启动 `sidecar-agent`、业务服务和 `api-gateway` 等源码进程。
 
+可观测性示例栈独立放在 `/firefly/deploy/docker/observability/single`，用于验证 Firefly 输出的 logs、traces 和 metrics 可被 OTel Collector、Vector、Loki、Tempo、Prometheus 和 Grafana 消费。详细入口见 [可观测性部署](./observability.md)。
+
 ## 推荐顺序
 
 ```text

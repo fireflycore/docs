@@ -43,6 +43,7 @@ const sidebar: DefaultTheme.Sidebar = {
       items: [
         { text: "Buf 与代码生成", link: "/deploy/buf" },
         { text: "Docker 与本地联调", link: "/deploy/docker" },
+        { text: "可观测性", link: "/deploy/observability" },
         { text: "sidecar-agent", link: "/deploy/sidecar-agent" },
         { text: "API Gateway", link: "/deploy/api-gateway" },
         { text: "K8s 部署", link: "/deploy/k8s" },
