@@ -1,6 +1,6 @@
 # Docker 与本地联调
 
-Firefly 当前没有单一“大一统 compose”。本地联调通常先启动 `/firefly/deploy/docker` 中的标准基础设施，再启动 `sidecar-agent`、业务服务和 `api-gateway` 等源码进程。
+Firefly 当前没有单一“大一统 compose”。本地联调通常先启动 `/firefly/deploy/docker` 中的标准基础设施，再启动 `sidecar-agent`、业务服务和 `api-gateway` 等源码进程。完整组件关系见 [流量拓扑](./traffic-topology.md)。
 
 可观测性示例栈独立放在 `/firefly/deploy/docker/observability/single`，用于验证 Firefly 输出的 logs、traces 和 metrics 可被 OTel Collector、Vector、Loki、Tempo、Prometheus 和 Grafana 消费。详细入口见 [可观测性部署](./observability.md)。
 
@@ -45,6 +45,7 @@ docker compose up -d
 | 端口 | 组件 | 用途 |
 | :--- | :--- | :--- |
 | `18500` | Consul | HTTP API / UI |
+| `18501` | Consul | gRPC |
 | `127.0.0.1:53` | CoreDNS | 节点级 Service DNS |
 | `18502` | sidecar-agent-envoy | 服务到服务数据面入口 |
 | `18503` | sidecar-agent-envoy | Envoy admin |
@@ -54,6 +55,7 @@ docker compose up -d
 | `18507` | east-west-envoy | Envoy admin |
 | `18508` | CoreDNS | health |
 | `18509` | CoreDNS | ready |
+| `18510` | CoreDNS | Prometheus metrics |
 
 CoreDNS 每台业务宿主机独立运行，负责把 `*.svc.cluster.local` 解析到本机 mesh VIP；DNS 不负责透明代理，后续导流由本机 nftables 或等价运行时完成。
 
@@ -67,6 +69,8 @@ Service DNS:9090
 ```
 
 `sidecar-agent-envoy` 的 Docker Compose 只发布 `18502/18503`。不要把 `9090` 作为 Docker 端口映射发布到 Envoy；`9090` 是服务逻辑端口，应由业务进程访问 `Service DNS:9090` 后经本机 nftables 透明导入 `18502`。
+
+`api-gateway-envoy` 的 Docker Compose 只发布 `18504/18505`，并只读挂载 `/opt/store/api-gateway/bin/var/data/descriptor`，用于读取 `api-gateway` 运行时维护的 gRPC-JSON transcoder descriptor。
 
 ## sidecar-agent 源码进程
 
@@ -112,16 +116,16 @@ cd firefly/golang/api-gateway
 go run ./cmd/server -config conf/bootstrap.json
 ```
 
-默认管理面：
+源码默认监听管理面；本机访问可使用 `127.0.0.1:18610`：
 
 ```text
-127.0.0.1:18610
+0.0.0.0:18610
 ```
 
-默认 xDS gRPC：
+源码默认监听 xDS gRPC；Envoy Docker bootstrap 通过 `host.docker.internal:18611` 访问：
 
 ```text
-127.0.0.1:18611
+0.0.0.0:18611
 ```
 
 默认入口 Envoy listener：

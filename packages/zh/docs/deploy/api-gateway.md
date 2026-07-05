@@ -1,6 +1,6 @@
 # API Gateway 部署
 
-`api-gateway` 是 Firefly 裸机场景下的 north-south API 网关控制面。它消费 Consul 中按 namespace 隔离的 route document、健康 endpoint 和 descriptor current，生成入口 Envoy xDS。
+`api-gateway` 是 Firefly 裸机场景下的 north-south API 网关控制面。它消费 Consul 中按 namespace 隔离的 route document、健康 endpoint 和 descriptor current，生成入口 Envoy xDS。它与 `api-gateway-envoy`、`sidecar-agent` 和服务间透明导流的完整关系见 [流量拓扑](./traffic-topology.md)。
 
 `api-gateway` 不负责签发 token、不做接口权限判断、不托管 Envoy / Consul 进程，也不替代旧 `http-gateway` 或旧 `grpc-gateway`。
 
@@ -11,16 +11,16 @@ cd firefly/golang/api-gateway
 go run ./cmd/server -config conf/bootstrap.json
 ```
 
-默认管理端口：
+源码默认监听管理端口；本机访问可使用 `127.0.0.1:18610`：
 
 ```text
-127.0.0.1:18610
+0.0.0.0:18610
 ```
 
-默认 xDS gRPC 地址：
+源码默认监听 xDS gRPC 地址；Envoy Docker bootstrap 通过 `host.docker.internal:18611` 访问：
 
 ```text
-127.0.0.1:18611
+0.0.0.0:18611
 ```
 
 默认入口 Envoy listener：
@@ -38,10 +38,10 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
 ```json
 {
   "admin": {
-    "listen_address": "127.0.0.1:18610"
+    "listen_address": "0.0.0.0:18610"
   },
   "xds": {
-    "listen_address": "127.0.0.1:18611",
+    "listen_address": "0.0.0.0:18611",
     "node_id": "api-gateway-envoy",
     "listener_address": "0.0.0.0:18504",
     "route_name": "api-gateway-route"
@@ -50,7 +50,7 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
     "admin_address": "127.0.0.1:18505"
   },
   "consul": {
-    "address": "127.0.0.1:18500",
+    "address": "192.168.1.100:18500",
     "datacenter": "dc1",
     "refresh_interval": "30s"
   },
@@ -74,7 +74,16 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
 }
 ```
 
+本机开发时可以按环境把 `consul.address` 改成 `127.0.0.1:18500`；以实际部署的 `conf/bootstrap.json` 为准。
+
 `authz.service_name` 和 `authz.service_namespace` 用来计算 Envoy ext_authz 要调用的普通服务 cluster。authz 没有健康实例时，下发空 EDS，Envoy 按 fail-close 处理。
+
+## 与 api-gateway-envoy 的关系
+
+`api-gateway` 只控制 `api-gateway-envoy`，不控制 `sidecar-agent-envoy`。当前 Envoy bootstrap 中 `node.id` 为 `api-gateway-envoy`，静态 xDS cluster 连接宿主机 `host.docker.internal:18611`；Compose 对宿主机发布 `18504` north-south 数据面入口和 `18505` admin。
+
+`api-gateway-envoy` 额外只读挂载 `/opt/store/api-gateway/bin/var/data/descriptor`，用于读取 gRPC-JSON transcoder 所需 descriptor。该目录由宿主机上的 `api-gateway` 进程维护。
+
 
 ## Namespace Descriptor
 

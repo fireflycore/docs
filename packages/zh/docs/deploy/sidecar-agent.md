@@ -1,6 +1,6 @@
 # sidecar-agent 部署
 
-`sidecar-agent` 是裸机 / IDC 场景下的本机控制面代理。它连接同机业务服务、本机 Envoy、共享 Consul 和可观测组件，负责 register / drain / deregister、watch/replay、xDS、健康探测和恢复视图。
+`sidecar-agent` 是裸机 / IDC 场景下的本机控制面代理。它连接同机业务服务、本机 Envoy、共享 Consul 和可观测组件，负责 register / drain / deregister、watch/replay、xDS、健康探测和恢复视图。它与 CoreDNS、nftables 和两个 Envoy 的完整关系见 [流量拓扑](./traffic-topology.md)。
 
 它通过 Envoy admin `/ready` 观察外部 Envoy 状态；默认探测间隔为 `2s`，只影响 readiness 摘要，不参与每次业务请求转发。
 
@@ -33,6 +33,7 @@ go run ./cmd/server -config conf/bootstrap.json
 - `18503`：本机 Envoy admin。
 - `127.0.0.1:53`：节点级 CoreDNS DNS 入口。
 - `18508/18509`：CoreDNS health / ready。
+- `18510`：CoreDNS Prometheus metrics。
 - `18500`：Consul HTTP。
 
 实际开放策略以仓库的 `PORTS.md` 和部署配置为准。
@@ -51,6 +52,19 @@ go-layout
 ```
 
 服务能力来源是业务构建产物中的 `dep/protobuf/gen/gateway.manifest.json`。`sidecar-agent` 会把服务注册事实和 route document 写入 Consul，供东西向 Envoy 和 `api-gateway` 消费。
+
+## 数据面协作
+
+`sidecar-agent` 只控制 `sidecar-agent-envoy`，不控制 `api-gateway-envoy`。当前 Envoy bootstrap 中 `node.id` 为 `sidecar-agent-envoy`，静态 xDS cluster 连接宿主机 `host.docker.internal:18601`；Compose 对宿主机发布 `18502` 数据面入口和 `18503` admin。
+
+服务间透明调用由 CoreDNS 和 nftables 把 `*.svc.cluster.local:9090` 导入本机 `sidecar-agent-envoy:18502`：
+
+```text
+Service DNS:9090
+  -> CoreDNS 返回 127.255.0.1
+  -> nftables redirect 到 127.0.0.1:18502
+  -> sidecar-agent-envoy 根据 xDS 转发到真实 endpoint
+```
 
 ## 验收命令
 
