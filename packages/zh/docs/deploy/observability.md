@@ -27,7 +27,7 @@ firefly/deploy/docker/observability/single
 | 层级 | 组件 | 职责 |
 | :--- | :--- | :--- |
 | 采集入口 | OTel Collector | 接收 OTLP traces / logs / metrics，处理后导出到 Tempo、Vector 和 Prometheus |
-| 日志转发 | Vector | 接收 OTLP logs，做结构化转换、低基数标签归一化、2GiB disk buffer 和 Loki 写入 |
+| 日志转发 | Vector | 接收 OTLP logs 和 Envoy stdout access log，做结构化转换、低基数标签归一化、2GiB disk buffer 和 Loki 写入 |
 | 存储 | Loki / Tempo / Prometheus | 分别存储日志、Trace 和指标 |
 | 展示与告警 | Grafana / Alertmanager / webhook-adapter | 示例面板、告警状态和企业微信 webhook 适配 |
 | 基础设施观测 | node-exporter / cAdvisor / blackbox-exporter / process-exporter / CoreDNS metrics | 宿主机、容器、外部探测、裸机进程和节点级 DNS 指标 |
@@ -101,6 +101,15 @@ sidecar-agent / api-gateway
   `- metrics     -> admin /metrics -> Prometheus firefly-control-plane job
 ```
 
+Envoy 数据面访问日志：
+
+```text
+api-gateway-envoy / sidecar-agent-envoy
+  -> stdout JSON access log
+  -> Vector docker_logs
+  -> Loki
+```
+
 基础设施指标：
 
 ```text
@@ -113,7 +122,9 @@ external probe      -> blackbox-exporter -> Prometheus
 
 当前 Collector 配置使用 `memory_limiter`、`resourcedetection`、tail sampling 和分类型 batch。日志默认导出到 `otlp_grpc/vector`；仅在临时排障时切换到 `otlp_http/loki` 直写 Loki。
 
-Vector 会把 `service`、`service_namespace`、`log_type`、`level`、`env` 作为 Loki 低基数 label；`app_id` 保留在日志 JSON 字段中，不作为 Loki label，避免 stream 基数膨胀。租户维度后续通过全局唯一 `app_id` 反查，不在日志链路兜底写入 `tenant_id=unknown`。
+Vector 会把 `service`、`service_namespace`、`log_type`、`level`、`env`、`component`、`envoy_role`、`host_ip`、`instance`、`cluster`、`zone`、`response_code_class`、`request_kind`、`route_status` 作为 Loki 低基数 label；`app_id`、`path`、`x_request_id`、`traceId`、`spanId`、`user_agent` 等高基数字段保留在日志 JSON 字段中，不作为 Loki label，避免 stream 基数膨胀。租户维度后续通过全局唯一 `app_id` 反查，不在日志链路兜底写入 `tenant_id=unknown`。
+
+访问日志统一使用 `log_type=access`。业务服务和 authz 的访问日志继续由现有 `go-micro` accesslogger 中间件通过 OTLP 写入；`api-gateway-envoy` 和 `sidecar-agent-envoy` 的访问日志由 HCM stdout JSON 写入，Vector 通过 Docker 日志采集后归一化到同一 Loki。Envoy 与服务之间通过 `traceparent`、`tracestate`、`baggage`、`traceId`、`spanId` 和 `x_request_id` 串联，不额外拆分日志类型。
 
 Tempo 2.10 的 Grafana Traces Drilldown / TraceQL metrics 依赖 metrics-generator 的 `local-blocks` processor；service graph / span metrics 仍 remote_write 到 Prometheus，当前单机配置默认不启用 `flush_to_storage`。
 
@@ -180,7 +191,7 @@ Grafana provisioning 当前加载：
 - `Tempo`：Trace，配置 service map、node graph 和 Loki 反查。
 - `AlertManager`：Prometheus Alertmanager 告警状态。
 
-当前面板覆盖 Linux 主机、容器、Prometheus、Blackbox、Loki / Vector 日志管道、Firefly 控制面、CoreDNS 和 LHDHT 业务服务总览。LHDHT 业务面板是生态消费示例，不表示 Firefly 承接 LHDHT 查询聚合、权限隔离或运营 API。
+当前面板覆盖 Linux 主机、容器、Prometheus、Blackbox、Loki / Vector 日志管道、Firefly 控制面、CoreDNS、`api-gateway-envoy`、`sidecar-agent-envoy` 和 LHDHT 业务服务总览。LHDHT 业务面板是生态消费示例，不表示 Firefly 承接 LHDHT 查询聚合、权限隔离或运营 API。
 
 容器内存面板用于观察运行态趋势。判断当前占用时优先看 `Last`，`Max` 表示所选时间范围内曾经出现过的峰值；发布、重启或 xDS 配置异常恢复后，较长时间范围内的 `Max` 仍可能保留旧峰值。需要和服务器当前值对齐时，可用 Prometheus instant query、`docker stats` 和组件 admin memory 接口交叉确认：
 

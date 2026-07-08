@@ -89,6 +89,8 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
 
 `api-gateway-envoy` 额外只读挂载 `descriptor.dir` 对应目录，例如 `/opt/firefly/descriptor`，用于读取 gRPC-JSON transcoder 所需 descriptor。该目录由宿主机上的 `api-gateway` 进程维护，Envoy 只读访问。
 
+`api-gateway-envoy` 的 HCM 会输出 stdout JSON 访问日志，并统一写 `log_type=access`。未命中 route 的 `404/route_not_found` 不会进入 ext_authz 或 authz 服务日志，但会由该 Envoy 访问日志记录。命中 route 的请求会透传 `traceparent`、`tracestate`、`baggage` 和 `x-request-id`，用于和 authz、业务服务访问日志关联；`x-request-id` 不是业务身份输入，也不是主 trace 链路。
+
 
 ## Namespace Descriptor
 
