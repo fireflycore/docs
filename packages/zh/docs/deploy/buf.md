@@ -207,4 +207,4 @@ firefly descriptor publish
 {namespace}/api-gateway/descriptor/current
 ```
 
-api-gateway 会按 namespace 拉取 descriptor current 并绑定到对应转码 route，不会把不同 proto 仓库生成的 descriptor 合并成一份全局 pb。
+api-gateway 会按 namespace 拉取 descriptor current，并让转码 route 关联对应 namespace descriptor；不会把不同 proto 仓库生成的 descriptor 合并成一份全局 pb。同一个 descriptor 被多条 route 使用时，api-gateway 只生成一份 descriptor-scoped `grpc_json_transcoder` filter。

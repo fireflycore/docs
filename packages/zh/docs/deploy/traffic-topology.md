@@ -107,7 +107,7 @@ flowchart LR
 | `18504` | `18504` | north-south HTTP/gRPC 数据面入口 |
 | `18505` | `19000` | Envoy admin |
 
-gRPC-JSON transcoder 需要读取 `api-gateway` 拉取的 descriptor 文件；Compose 会把宿主机 `/opt/store/api-gateway/bin/var/data/descriptor` 按相同路径只读挂入容器。
+gRPC-JSON transcoder 需要读取 `api-gateway` 拉取的 descriptor 文件；Compose 会把宿主机上的 `descriptor.dir`，例如 `/opt/firefly/descriptor`，按相同路径只读挂入容器。
 
 ## Service-to-Service 链路
 

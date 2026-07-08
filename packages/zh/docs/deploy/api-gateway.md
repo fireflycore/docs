@@ -50,9 +50,12 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
     "admin_address": "127.0.0.1:18505"
   },
   "consul": {
-    "address": "192.168.1.100:18500",
+    "address": "127.0.0.1:18500",
     "datacenter": "dc1",
     "refresh_interval": "30s"
+  },
+  "descriptor": {
+    "dir": "/opt/firefly/descriptor"
   },
   "authz": {
     "service_name": "authz",
@@ -74,7 +77,9 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
 }
 ```
 
-本机开发时可以按环境把 `consul.address` 改成 `127.0.0.1:18500`；以实际部署的 `conf/bootstrap.json` 为准。
+本机开发或测试环境可以按环境把 `consul.address` 改成实际 Consul 地址；以实际部署的 `conf/bootstrap.json` 为准。
+
+`descriptor.dir` 是 `api-gateway` 与 `api-gateway-envoy` 共同可见的 descriptor 缓存根目录。首字符为 `/` 时按绝对路径使用，适合配置为 `/opt/firefly/descriptor` 这类稳定外挂目录；相对路径按 `api-gateway` 部署基目录解析，不能是 `.`、`..` 或 `../...` 逃逸路径。
 
 `authz.service_name` 和 `authz.service_namespace` 用来计算 Envoy ext_authz 要调用的普通服务 cluster。authz 没有健康实例时，下发空 EDS，Envoy 按 fail-close 处理。
 
@@ -82,7 +87,7 @@ Envoy 需要通过 ADS 访问 `xds.listen_address`，入口流量监听地址由
 
 `api-gateway` 只控制 `api-gateway-envoy`，不控制 `sidecar-agent-envoy`。当前 Envoy bootstrap 中 `node.id` 为 `api-gateway-envoy`，静态 xDS cluster 连接宿主机 `host.docker.internal:18611`；Compose 对宿主机发布 `18504` north-south 数据面入口和 `18505` admin。
 
-`api-gateway-envoy` 额外只读挂载 `/opt/store/api-gateway/bin/var/data/descriptor`，用于读取 gRPC-JSON transcoder 所需 descriptor。该目录由宿主机上的 `api-gateway` 进程维护。
+`api-gateway-envoy` 额外只读挂载 `descriptor.dir` 对应目录，例如 `/opt/firefly/descriptor`，用于读取 gRPC-JSON transcoder 所需 descriptor。该目录由宿主机上的 `api-gateway` 进程维护，Envoy 只读访问。
 
 
 ## Namespace Descriptor
@@ -113,7 +118,7 @@ lhdht/api-gateway/descriptor/current
 story-studio/api-gateway/descriptor/current
 ```
 
-`api-gateway` 会按 namespace 拉取 descriptor current JSON，下载并校验对应 pb。不同 proto 仓库生成的 descriptor 不会被合并成一份全局 pb，转码 route 通过 route-level typed per-filter config 绑定自己的 namespace descriptor。
+`api-gateway` 会按 namespace 拉取 descriptor current JSON，下载并校验对应 pb。不同 proto 仓库生成的 descriptor 不会被合并成一份全局 pb；每条转码 route 按 namespace 关联自己的 descriptor current。同一个 descriptor 被多条 route 使用时，`api-gateway` 只生成一份 descriptor-scoped `grpc_json_transcoder` filter，避免 Envoy 重复加载同一 descriptor。
 
 descriptor 不只需要能解析成 `google.protobuf.FileDescriptorSet`，还必须包含 route document 中转码 route 声明的 `grpc_service`。如果 descriptor 缺少目标 proto service，`api-gateway` 会拒绝发布新 xDS 并在 `/debug/xds.snapshot_error` 暴露错误，避免把必然被 Envoy RDS NACK 的配置下发给 `api-gateway-envoy`。
 

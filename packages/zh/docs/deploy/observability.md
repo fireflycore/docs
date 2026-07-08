@@ -182,6 +182,13 @@ Grafana provisioning 当前加载：
 
 当前面板覆盖 Linux 主机、容器、Prometheus、Blackbox、Loki / Vector 日志管道、Firefly 控制面、CoreDNS 和 LHDHT 业务服务总览。LHDHT 业务面板是生态消费示例，不表示 Firefly 承接 LHDHT 查询聚合、权限隔离或运营 API。
 
+容器内存面板用于观察运行态趋势。判断当前占用时优先看 `Last`，`Max` 表示所选时间范围内曾经出现过的峰值；发布、重启或 xDS 配置异常恢复后，较长时间范围内的 `Max` 仍可能保留旧峰值。需要和服务器当前值对齐时，可用 Prometheus instant query、`docker stats` 和组件 admin memory 接口交叉确认：
+
+```promql
+max by (name) (container_memory_rss{name="api-gateway-envoy"})
+max by (name) (container_memory_working_set_bytes{name="api-gateway-envoy"})
+```
+
 ## 服务接入
 
 同一 Docker network 内的服务使用：

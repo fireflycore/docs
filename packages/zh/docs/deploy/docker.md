@@ -70,7 +70,7 @@ Service DNS:9090
 
 `sidecar-agent-envoy` 的 Docker Compose 只发布 `18502/18503`。不要把 `9090` 作为 Docker 端口映射发布到 Envoy；`9090` 是服务逻辑端口，应由业务进程访问 `Service DNS:9090` 后经本机 nftables 透明导入 `18502`。
 
-`api-gateway-envoy` 的 Docker Compose 只发布 `18504/18505`，并只读挂载 `/opt/store/api-gateway/bin/var/data/descriptor`，用于读取 `api-gateway` 运行时维护的 gRPC-JSON transcoder descriptor。
+`api-gateway-envoy` 的 Docker Compose 只发布 `18504/18505`，并只读挂载 `api-gateway` 配置的 `descriptor.dir`，例如 `/opt/firefly/descriptor`，用于读取 `api-gateway` 运行时维护的 gRPC-JSON transcoder descriptor。
 
 ## sidecar-agent 源码进程
 
