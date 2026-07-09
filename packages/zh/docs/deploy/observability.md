@@ -112,6 +112,16 @@ api-gateway-envoy / sidecar-agent-envoy
   -> Loki
 ```
 
+Envoy 数据面 trace：
+
+```text
+api-gateway-envoy / sidecar-agent-envoy
+  -> Envoy HCM OpenTelemetry tracer
+  -> OTLP/gRPC
+  -> OTel Collector
+  -> Tempo
+```
+
 基础设施指标：
 
 ```text
@@ -126,7 +136,7 @@ external probe      -> blackbox-exporter -> Prometheus
 
 Vector 会把 `service`、`service_namespace`、`log_type`、`level`、`env`、`component`、`envoy_role`、`host_ip`、`instance`、`cluster`、`zone`、`response_code_class`、`request_kind`、`route_status` 作为 Loki 低基数 label；`app_id`、`path`、`x_request_id`、`traceId`、`spanId`、`user_agent` 等高基数字段保留在日志 JSON 字段中，不作为 Loki label，避免 stream 基数膨胀。租户维度后续通过全局唯一 `app_id` 反查，不在日志链路兜底写入 `tenant_id=unknown`。
 
-访问日志统一使用 `log_type=access`。业务服务和 authz 的访问日志继续由现有 `go-micro` accesslogger 中间件通过 OTLP 写入；`api-gateway-envoy` 和 `sidecar-agent-envoy` 的访问日志由 HCM OpenTelemetry access logger 通过 OTLP/gRPC 写入 Collector，再经 Vector 归一化到同一 Loki。Envoy 与服务之间通过 `traceparent`、`tracestate`、`baggage`、`traceId`、`spanId` 和 `x_request_id` 串联，不额外拆分日志类型。
+访问日志统一使用 `log_type=access`。业务服务和 authz 的访问日志继续由现有 `go-micro` accesslogger 中间件通过 OTLP 写入；`api-gateway-envoy` 和 `sidecar-agent-envoy` 的访问日志由 HCM OpenTelemetry access logger 通过 OTLP/gRPC 写入 Collector，再经 Vector 归一化到同一 Loki。Envoy 还必须启用 HCM OpenTelemetry tracer；access logger 只负责产生日志，tracer 负责生成/传播 `traceparent` 并把 Envoy span 写入 Tempo。Envoy 与服务之间通过 `traceparent`、`tracestate`、`baggage`、`traceId`、`spanId` 和 `x_request_id` 串联，不额外拆分日志类型。
 
 Tempo 2.10 的 Grafana Traces Drilldown / TraceQL metrics 依赖 metrics-generator 的 `local-blocks` processor；service graph / span metrics 仍 remote_write 到 Prometheus，当前单机配置默认不启用 `flush_to_storage`。
 

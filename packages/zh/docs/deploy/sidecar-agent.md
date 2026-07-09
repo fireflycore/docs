@@ -66,7 +66,7 @@ Service DNS:9090
   -> sidecar-agent-envoy 根据 xDS 转发到真实 endpoint
 ```
 
-`sidecar-agent-envoy` 的 HCM 会通过 Envoy OpenTelemetry access logger 发送 OTLP/gRPC 访问日志，并统一写 `log_type=access`。服务间请求会记录 `authority`、`path`、`upstream_cluster`、`response_code_details`、`grpc_status`、耗时和字节数；请求继续透传 `traceparent`、`tracestate`、`baggage` 和 `x-request-id`，用于和服务访问日志关联。`x-request-id` 只用于 Envoy 或日志关联；主 trace 传播使用 `traceparent`、`tracestate` 和 `baggage`。
+`sidecar-agent-envoy` 的 HCM 会同时下发 Envoy OpenTelemetry access logger 和 OpenTelemetry tracer。access logger 通过 OTLP/gRPC 发送访问日志，并统一写 `log_type=access`；tracer 通过同一 Collector 入口写入 Tempo，并在入站请求缺少 `traceparent` 时生成 trace。服务间请求会记录 `authority`、`path`、`upstream_cluster`、`response_code_details`、`grpc_status`、耗时和字节数；请求继续传播 `traceparent`、`tracestate`、`baggage` 和 `x-request-id`，用于和服务访问日志关联。`x-request-id` 只用于 Envoy 或日志关联；主 trace 传播使用 `traceparent`、`tracestate` 和 `baggage`。
 
 ## 验收命令
 
